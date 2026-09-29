@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "case_ashcroft_study",
+  "title": "The Ashcroft Study Murder",
+  "difficulty": "medium",
+  "dossier": {
+    "summary": "Renowned architect Adrian Ashcroft was found dead inside his private study shortly after a small dinner gathering at Ashcroft House. The study door was closed, nothing obvious appeared stolen, and every remaining guest claims to have been elsewhere when he died.",
+    "location": "Ashcroft House, Westbridge",
+    "incident_time": "10:15 PM"
+  },
+  "victim": {
+    "id": "victim_adrian_ashcroft",
+    "name": "Adrian Ashcroft",
+    "age": 58,
+    "public_profile": "A celebrated architect known for major civic projects and an exacting personality. He hosted a private dinner at his home on the night of his death."
+  },
+  "suspects": [
+    {
+      "id": "suspect_elena_ashcroft",
+      "name": "Elena Ashcroft",
+      "age": 52,
+      "occupation": "Gallery owner",
+      "relationship_to_victim": "Wife",
+      "public_profile": "Adrian's wife of twenty-six years. She says she spent the critical period speaking with a caterer in the kitchen."
+    },
+    {
+      "id": "suspect_marcus_reed",
+      "name": "Marcus Reed",
+      "age": 41,
+      "occupation": "Architect",
+      "relationship_to_victim": "Business partner",
+      "public_profile": "Adrian's long-time business partner. Their firm had recently won a major public development contract."
+    },
+    {
+      "id": "suspect_maya_sen",
+      "name": "Maya Sen",
+      "age": 34,
+      "occupation": "Investigative journalist",
+      "relationship_to_victim": "Dinner guest",
+      "public_profile": "A journalist who had been interviewing Adrian about his career. She says she stepped outside to take a phone call."
+    },
+    {
+      "id": "suspect_daniel_cross",
+      "name": "Daniel Cross",
+      "age": 29,
+      "occupation": "Junior architect",
+      "relationship_to_victim": "Former employee",
+      "public_profile": "A talented architect who left Adrian's firm after a public disagreement six months earlier. Adrian unexpectedly invited him to the dinner."
+    }
+  ],
+  "initial_evidence": [
+    {
+      "id": "evidence_cracked_watch",
+      "title": "Cracked Wristwatch",
+      "description": "Adrian's wristwatch was found beneath the desk with its glass cracked.",
+      "kind": "physical"
+    },
+    {
+      "id": "evidence_door_log",
+      "title": "Study Door Access Log",
+      "description": "The electronic lock recorded several entries during the evening. Investigators have not yet reconstructed who made each entry.",
+      "kind": "digital"
+    },
+    {
+      "id": "evidence_torn_note",
+      "title": "Torn Note",
+      "description": "Half of a handwritten note was recovered from the study wastebasket. The surviving text reads: '...cannot let this become public tomorrow.'",
+      "kind": "document"
+    }
+  ]
+}
