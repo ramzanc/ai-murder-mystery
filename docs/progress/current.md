@@ -2,7 +2,7 @@
 
 ## Current checkpoint
 
-Day 3 complete: case JSON loading and playable terminal dossier browser.
+Day 4 complete: investigation session state and deterministic suspect questioning.
 
 ## Implemented
 
@@ -39,8 +39,22 @@ Day 3 complete: case JSON loading and playable terminal dossier browser.
   - suspects
   - starting evidence
 - Added an interactive terminal case browser.
-- Added `scripts/play_case.py` as the Day 3 playable entrypoint.
+- Added `scripts/play_case.py` as the playable entrypoint.
 - Added unit tests for valid loading and failure cases.
+- Added immutable investigation-session snapshots on top of the immutable case definition.
+- Added predefined deterministic interrogation topics:
+  - alibi
+  - secret
+- Added ordered question events with monotonic sequence numbers.
+- Added copy-on-write session transitions.
+- Added session-owned discovered evidence IDs.
+- Added validation for:
+  - invalid suspect IDs
+  - invalid question topics
+  - session/case mismatches
+- Extended the terminal game to question suspects.
+- Added investigation-history rendering.
+- Added Day 4 unit tests for investigation state transitions and invariants.
 
 ## Verification
 
@@ -54,8 +68,12 @@ Expected:
 - The sample case loads successfully.
 - The player can browse the dossier.
 - The player can inspect all four suspects.
-- The player can inspect starting evidence.
+- The player can inspect discovered evidence.
+- The player can ask suspects about alibis and secrets.
+- Each question is appended to investigation history.
+- Invalid suspect IDs and topics are rejected.
+- Canonical case data remains unchanged.
 Current playable result
 Run:
 uv run python -m scripts.play_case
-The terminal presents the first Daily Detective case and lets the player browse its public dossier, suspects, and starting evidence.
+The terminal now supports a stateful deterministic investigation. The player can browse the case, question different suspects about predefined topics, and inspect the ordered history of the current investigation.
