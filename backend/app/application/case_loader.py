@@ -5,11 +5,15 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.domain.case import CaseManifest
-
+from app.validation.knowledge import (
+    KnowledgeConsistencyError,
+    validate_knowledge,
+)
 from app.validation.timeline import (
     TimelineConsistencyError,
     validate_timeline,
 )
+
 
 class CaseLoadError(RuntimeError):
     """Base exception for failures while loading a case."""
@@ -96,7 +100,20 @@ def load_case(path: str | Path) -> CaseManifest:
             f"  - {exc}"
         ) from exc
 
+    try:
+        validate_knowledge(
+            suspects=case.suspects,
+            timeline=case.timeline,
+        )
+    except KnowledgeConsistencyError as exc:
+        raise CaseSchemaError(
+            f"Case file '{case_path}' has inconsistent "
+            f"suspect knowledge:\n"
+            f"  - {exc}"
+        ) from exc
+
     return case
+
 
 def _format_schema_error(
     case_path: Path,

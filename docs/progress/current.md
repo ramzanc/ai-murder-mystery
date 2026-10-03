@@ -2,8 +2,8 @@
 
 ## Current checkpoint
 
-Day 5 complete: theory, official accusation, deterministic scoring, and
-canonical reveal.
+Day 7 complete: canonical truth, suspect observations, subjective beliefs, and
+knowledge-flow validation.
 
 ## Implemented
 
@@ -75,6 +75,17 @@ canonical reveal.
   player-visible clues.
 - Added unit and integration coverage for correct/wrong theories, copy-on-write
   finalization, scoring lockout, reveal lockout, and the full CLI flow.
+- Added immutable epistemic-state models for suspect knowledge.
+- Separated canonical timeline truth from subjective observations and beliefs.
+- Added confidence values constrained between 0.0 and 1.0.
+- Required every observation to reference a canonical source event.
+- Required an observing suspect to be present in the source event.
+- Prevented suspects from knowing private events without a causal source.
+- Prevented beliefs from using another suspect's private observations.
+- Allowed contradictory and incorrect beliefs without modifying canonical truth.
+- Integrated knowledge consistency validation into case loading.
+- Added Day 7 unit coverage for causal sources, private knowledge boundaries,
+  divergent perception, incorrect beliefs, and cross-suspect leakage.
 
 ## Verification
 
@@ -110,4 +121,4 @@ reveal.
 
 ## Next checkpoint
 
-Day 6: model the canonical timeline and validate time/location consistency.
+Day 8: model evidence causality and multiple legal clue-unlock paths.

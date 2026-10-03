@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.domain.knowledge import SuspectKnowledge
+
 
 class Suspect(BaseModel):
     model_config = ConfigDict(
@@ -29,4 +31,7 @@ class Suspect(BaseModel):
     public_profile: str = Field(
         min_length=1,
         max_length=1000,
+    )
+    knowledge: SuspectKnowledge = Field(
+        default_factory=SuspectKnowledge,
     )
