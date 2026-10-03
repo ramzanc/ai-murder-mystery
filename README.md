@@ -6,9 +6,31 @@ The backend will remain authoritative for canonical case truth, game rules, perm
 
 ## Current status
 
-Day 1: backend walking skeleton.
+Day 5 complete: the first deterministic terminal mystery is playable from
+dossier review through one official accusation and the canonical reveal.
 
 Available endpoint:
 
 ```text
 GET /health
+```
+
+## Run the backend checks
+
+From `backend/`:
+
+```bash
+uv run pytest
+```
+
+## Play the case
+
+From `backend/`:
+
+```bash
+uv run python -m scripts.play_case
+```
+
+The terminal game lets you inspect the dossier, question four suspects, review
+the starting evidence, submit one killer/motive/method/evidence theory, receive
+a deterministic score, and view the immutable canonical solution.

@@ -80,8 +80,39 @@ def valid_case_payload() -> dict:
                     "A broken fountain pen was found beside the desk."
                 ),
                 "kind": "physical",
+            },
+            {
+                "id": "evidence_access_record",
+                "title": "Access Record",
+                "description": (
+                    "An access record places one suspect near the office."
+                ),
+                "kind": "digital",
             }
         ],
+        "accusation_options": {
+            "motives": [
+                "The victim discovered missing company funds.",
+                "A personal grudge.",
+            ],
+            "methods": [
+                "The victim was struck with a desk ornament.",
+                "The victim was poisoned.",
+            ],
+        },
+        "solution": {
+            "killer_id": "suspect_two",
+            "motive": "The victim discovered missing company funds.",
+            "method": "The victim was struck with a desk ornament.",
+            "key_evidence_ids": [
+                "evidence_test_item",
+                "evidence_access_record",
+            ],
+            "explanation": (
+                "The physical evidence and access record identify the "
+                "accountant as the killer."
+            ),
+        },
     }
 
 
@@ -99,7 +130,7 @@ def test_load_case_returns_case_manifest(tmp_path) -> None:
     assert case.id == "case_loader_test"
     assert case.title == "Loader Test Case"
     assert len(case.suspects) == 4
-    assert len(case.initial_evidence) == 1
+    assert len(case.initial_evidence) == 2
 
 
 def test_load_case_rejects_missing_file(tmp_path) -> None:

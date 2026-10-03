@@ -9,8 +9,11 @@ from app.application.investigation_service import (
     SessionCaseMismatchError,
     ask_question,
     start_session,
+    InvestigationAlreadyFinalizedError,
+    submit_final_theory,
 )
 from app.domain.investigation import QuestionTopic
+from app.domain.theory import Theory
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
@@ -172,3 +175,69 @@ def test_session_cannot_be_used_with_another_case(case):
             ),
             topic=QuestionTopic.ALIBI,
         )
+
+def test_final_submission_locks_official_scoring(
+    case,
+):
+    session = start_session(case)
+
+    theory = Theory(
+        killer_id=case.solution.killer_id,
+        motive=case.solution.motive,
+        method=case.solution.method,
+        evidence_ids=case.solution.key_evidence_ids,
+    )
+
+    finalized_session, score = (
+        submit_final_theory(
+            case=case,
+            session=session,
+            theory=theory,
+        )
+    )
+
+    assert finalized_session.is_finalized
+    assert (
+        finalized_session.final_submission
+        is not None
+    )
+    assert (
+        finalized_session.official_score
+        == score.total_points
+    )
+
+    with pytest.raises(
+        InvestigationAlreadyFinalizedError
+    ):
+        submit_final_theory(
+            case=case,
+            session=finalized_session,
+            theory=theory,
+        )
+
+def test_final_submission_does_not_mutate_original_session(
+    case,
+):
+    session = start_session(case)
+
+    theory = Theory(
+        killer_id=case.solution.killer_id,
+        motive=case.solution.motive,
+        method=case.solution.method,
+        evidence_ids=case.solution.key_evidence_ids,
+    )
+
+    finalized_session, _ = (
+        submit_final_theory(
+            case=case,
+            session=session,
+            theory=theory,
+        )
+    )
+
+    assert session.is_finalized is False
+    assert session.final_submission is None
+    assert session.official_score is None
+
+    assert finalized_session is not session
+    assert finalized_session.is_finalized is True

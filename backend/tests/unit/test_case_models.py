@@ -2,6 +2,8 @@ import pytest
 from pydantic import ValidationError
 
 from app.domain.case import (
+    AccusationOptions,
+    CanonicalSolution,
     CaseManifest,
     Difficulty,
     PublicDossier,
@@ -85,6 +87,28 @@ def make_case() -> CaseManifest:
                 kind=EvidenceKind.DIGITAL,
             ),
         ),
+        accusation_options=AccusationOptions(
+            motives=(
+                "The victim discovered missing company funds.",
+                "A personal grudge.",
+            ),
+            methods=(
+                "The victim was struck with a desk ornament.",
+                "The victim was poisoned.",
+            ),
+        ),
+        solution=CanonicalSolution(
+            killer_id="suspect_marcus_hale",
+            motive="The victim discovered missing company funds.",
+            method="The victim was struck with a desk ornament.",
+            key_evidence_ids=(
+                "evidence_broken_watch",
+                "evidence_access_log",
+            ),
+            explanation=(
+                "The broken watch and access log identify the killer."
+            ),
+        ),
     )
 
 
@@ -163,6 +187,20 @@ def test_case_requires_exactly_four_suspects(
                 public_profile="A test victim.",
             ),
             suspects=suspects,  # pyright: ignore[reportArgumentType]
+            accusation_options=AccusationOptions(
+                motives=("A test motive.", "Another motive."),
+                methods=("A test method.", "Another method."),
+            ),
+            solution=CanonicalSolution(
+                killer_id="suspect_one",
+                motive="A test motive.",
+                method="A test method.",
+                key_evidence_ids=(
+                    "evidence_one",
+                    "evidence_two",
+                ),
+                explanation="A test explanation.",
+            ),
         )
 
 
@@ -240,6 +278,20 @@ def test_duplicate_suspect_ids_are_rejected() -> None:
                 ),
                 duplicate,
             ),
+            accusation_options=AccusationOptions(
+                motives=("A test motive.", "Another motive."),
+                methods=("A test method.", "Another method."),
+            ),
+            solution=CanonicalSolution(
+                killer_id="suspect_duplicate",
+                motive="A test motive.",
+                method="A test method.",
+                key_evidence_ids=(
+                    "evidence_one",
+                    "evidence_two",
+                ),
+                explanation="A test explanation.",
+            ),
         )
 
 
@@ -264,6 +316,63 @@ def test_duplicate_evidence_ids_are_rejected() -> None:
     with pytest.raises(
         ValidationError,
         match="evidence IDs must be unique",
+    ):
+        CaseManifest.model_validate(case_data)
+
+
+def test_solution_references_case_suspect_and_evidence() -> None:
+    case_data = make_case().model_dump()
+    case_data["solution"]["killer_id"] = "suspect_unknown"
+
+    with pytest.raises(
+        ValidationError,
+        match="solution killer_id must reference a case suspect",
+    ):
+        CaseManifest.model_validate(case_data)
+
+    case_data = make_case().model_dump()
+    case_data["solution"]["key_evidence_ids"] = (
+        "evidence_broken_watch",
+        "evidence_unknown",
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="solution key evidence must reference case evidence",
+    ):
+        CaseManifest.model_validate(case_data)
+
+
+def test_solution_key_evidence_ids_are_unique() -> None:
+    case_data = make_case().model_dump()
+    case_data["solution"]["key_evidence_ids"] = (
+        "evidence_broken_watch",
+        "evidence_broken_watch",
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="solution key evidence IDs must be unique",
+    ):
+        CaseManifest.model_validate(case_data)
+
+
+def test_solution_motive_and_method_are_offered_options() -> None:
+    case_data = make_case().model_dump()
+    case_data["solution"]["motive"] = "A motive that was not offered."
+
+    with pytest.raises(
+        ValidationError,
+        match="solution motive must be present in accusation options",
+    ):
+        CaseManifest.model_validate(case_data)
+
+    case_data = make_case().model_dump()
+    case_data["solution"]["method"] = "A method that was not offered."
+
+    with pytest.raises(
+        ValidationError,
+        match="solution method must be present in accusation options",
     ):
         CaseManifest.model_validate(case_data)
 

@@ -1,3 +1,4 @@
+from app.application.scoring import TheoryScore, score_theory
 from app.domain.case import CaseManifest
 from app.domain.investigation import (
     InvestigationSession,
@@ -5,6 +6,8 @@ from app.domain.investigation import (
     QuestionTopic,
 )
 from app.domain.suspect import Suspect
+from app.domain.theory import FinalSubmission, Theory
+
 
 class InvestigationError(ValueError):
     """Base error for invalid investigation operations."""
@@ -20,6 +23,10 @@ class InvalidQuestionTopicError(InvestigationError):
 
 class SessionCaseMismatchError(InvestigationError):
     """Raised when a session is used with a different case."""
+
+
+class InvestigationAlreadyFinalizedError(InvestigationError):
+    """Raised when an investigation has already been finalized."""
 
 
 def start_session(case: CaseManifest) -> InvestigationSession:
@@ -137,3 +144,59 @@ def _build_answer(
     raise AssertionError(
         f"Unhandled question topic: {topic!r}"
     )
+
+
+def submit_final_theory(
+    case: CaseManifest,
+    session: InvestigationSession,
+    theory: Theory,
+) -> tuple[InvestigationSession, TheoryScore]:
+    _ensure_session_matches_case(case, session)
+
+    if session.is_finalized:
+        raise InvestigationAlreadyFinalizedError(
+            "official accusation has already been submitted"
+        )
+
+    suspect_ids = {
+        suspect.id
+        for suspect in case.suspects
+    }
+
+    if theory.killer_id not in suspect_ids:
+        raise InvalidSuspectError(
+            f"unknown suspect: {theory.killer_id}"
+        )
+
+    discovered_evidence = set(
+        session.discovered_evidence_ids
+    )
+
+    unavailable_evidence = (
+        set(theory.evidence_ids)
+        - discovered_evidence
+    )
+
+    if unavailable_evidence:
+        raise InvestigationError(
+            "theory references undiscovered evidence: "
+            f"{sorted(unavailable_evidence)}"
+        )
+
+    score = score_theory(
+        case=case,
+        theory=theory,
+    )
+
+    submission = FinalSubmission(
+        theory=theory,
+        score=score.total_points,
+    )
+
+    updated_session = session.model_copy(
+        update={
+            "final_submission": submission,
+        }
+    )
+
+    return updated_session, score

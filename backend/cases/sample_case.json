@@ -52,13 +52,13 @@
     {
       "id": "evidence_cracked_watch",
       "title": "Cracked Wristwatch",
-      "description": "Adrian's wristwatch was found beneath the desk with its glass cracked.",
+      "description": "Adrian's wristwatch was found beneath the desk with its glass cracked and its hands stopped at 10:12 PM.",
       "kind": "physical"
     },
     {
       "id": "evidence_door_log",
       "title": "Study Door Access Log",
-      "description": "The electronic lock recorded several entries during the evening. Investigators have not yet reconstructed who made each entry.",
+      "description": "The electronic lock recorded Marcus Reed's access code entering the study at 10:07 PM and leaving at 10:14 PM.",
       "kind": "digital"
     },
     {
@@ -67,5 +67,29 @@
       "description": "Half of a handwritten note was recovered from the study wastebasket. The surviving text reads: '...cannot let this become public tomorrow.'",
       "kind": "document"
     }
-  ]
+  ],
+  "accusation_options": {
+    "motives": [
+      "Adrian discovered Marcus had been diverting company funds and intended to expose him.",
+      "A dispute over inheritance.",
+      "Revenge for a personal betrayal.",
+      "An attempt to hide an affair."
+    ],
+    "methods": [
+      "Poison was placed in Adrian's drink.",
+      "Marcus struck Adrian with the heavy brass desk ornament during their confrontation in the study.",
+      "Adrian was strangled with a curtain cord.",
+      "Adrian was pushed from the study balcony."
+    ]
+  },
+  "solution": {
+    "killer_id": "suspect_marcus_reed",
+    "motive": "Adrian discovered Marcus had been diverting company funds and intended to expose him.",
+    "method": "Marcus struck Adrian with the heavy brass desk ornament during their confrontation in the study.",
+    "key_evidence_ids": [
+      "evidence_cracked_watch",
+      "evidence_door_log"
+    ],
+    "explanation": "Marcus confronted Adrian in the study after learning that Adrian intended to expose his financial misconduct. The study door access log places Marcus at the room during the critical period, while the cracked wristwatch helps establish the timing of the confrontation. The torn note provides supporting context but is not required to identify the killer."
+  }
 }
