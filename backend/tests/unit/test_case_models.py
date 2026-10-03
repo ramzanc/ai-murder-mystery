@@ -12,6 +12,15 @@ from app.domain.case import (
 from app.domain.evidence import Evidence, EvidenceKind
 from app.domain.suspect import Suspect
 
+from app.domain.timeline import (
+    ClockTime,
+    TimeInterval,
+    Timeline,
+    TimelineEvent,
+    TimelineEventKind,
+    TimelineLocation,
+)
+
 
 def make_suspect(
     suspect_id: str,
@@ -85,6 +94,36 @@ def make_case() -> CaseManifest:
                     "recorded several entries that evening."
                 ),
                 kind=EvidenceKind.DIGITAL,
+            ),
+        ),
+                timeline=Timeline(
+            murder_window=TimeInterval(
+                start=ClockTime(hour=21, minute=20),
+                end=ClockTime(hour=21, minute=40),
+            ),
+            locations=(
+                TimelineLocation(
+                    id="location_private_office",
+                    name="Private office",
+                ),
+            ),
+            events=(
+                TimelineEvent(
+                    id="timeline_event_murder",
+                    kind=TimelineEventKind.MURDER,
+                    description=(
+                        "Marcus killed Evelyn in the private office."
+                    ),
+                    actor_ids=(
+                        "victim_evelyn_cross",
+                        "suspect_marcus_hale",
+                    ),
+                    location_id="location_private_office",
+                    interval=TimeInterval(
+                        start=ClockTime(hour=21, minute=29),
+                        end=ClockTime(hour=21, minute=30),
+                    ),
+                ),
             ),
         ),
         accusation_options=AccusationOptions(
@@ -191,6 +230,36 @@ def test_case_requires_exactly_four_suspects(
                 motives=("A test motive.", "Another motive."),
                 methods=("A test method.", "Another method."),
             ),
+            timeline=Timeline(
+                murder_window=TimeInterval(
+                    start=ClockTime(hour=21, minute=20),
+                    end=ClockTime(hour=21, minute=40),
+                ),
+                locations=(
+                    TimelineLocation(
+                        id="location_private_office",
+                        name="Private office",
+                    ),
+                ),
+                events=(
+                    TimelineEvent(
+                        id="timeline_event_murder",
+                        kind=TimelineEventKind.MURDER,
+                        description=(
+                            "Marcus killed Evelyn in the private office."
+                        ),
+                        actor_ids=(
+                            "victim_evelyn_cross",
+                            "suspect_marcus_hale",
+                        ),
+                        location_id="location_private_office",
+                        interval=TimeInterval(
+                            start=ClockTime(hour=21, minute=29),
+                            end=ClockTime(hour=21, minute=30),
+                        ),
+                    ),
+                ),
+            ),
             solution=CanonicalSolution(
                 killer_id="suspect_one",
                 motive="A test motive.",
@@ -281,6 +350,36 @@ def test_duplicate_suspect_ids_are_rejected() -> None:
             accusation_options=AccusationOptions(
                 motives=("A test motive.", "Another motive."),
                 methods=("A test method.", "Another method."),
+            ),
+            timeline=Timeline(
+                murder_window=TimeInterval(
+                    start=ClockTime(hour=21, minute=20),
+                    end=ClockTime(hour=21, minute=40),
+                ),
+                locations=(
+                    TimelineLocation(
+                        id="location_private_office",
+                        name="Private office",
+                    ),
+                ),
+                events=(
+                    TimelineEvent(
+                        id="timeline_event_murder",
+                        kind=TimelineEventKind.MURDER,
+                        description=(
+                            "Marcus killed Evelyn in the private office."
+                        ),
+                        actor_ids=(
+                            "victim_evelyn_cross",
+                            "suspect_marcus_hale",
+                        ),
+                        location_id="location_private_office",
+                        interval=TimeInterval(
+                            start=ClockTime(hour=21, minute=29),
+                            end=ClockTime(hour=21, minute=30),
+                        ),
+                    ),
+                ),
             ),
             solution=CanonicalSolution(
                 killer_id="suspect_duplicate",

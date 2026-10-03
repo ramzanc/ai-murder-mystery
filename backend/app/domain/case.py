@@ -10,6 +10,7 @@ from pydantic import (
 
 from app.domain.evidence import Evidence
 from app.domain.suspect import Suspect
+from app.domain.timeline import Timeline
 
 
 class Difficulty(str, Enum):
@@ -151,6 +152,8 @@ class CaseManifest(BaseModel):
     suspects: tuple[Suspect, Suspect, Suspect, Suspect]
 
     initial_evidence: tuple[Evidence, ...] = ()
+
+    timeline: Timeline
 
     accusation_options: AccusationOptions
     solution: CanonicalSolution

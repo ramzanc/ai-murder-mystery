@@ -68,6 +68,214 @@
       "kind": "document"
     }
   ],
+    "timeline": {
+    "murder_window": {
+      "start": {
+        "hour": 22,
+        "minute": 5
+      },
+      "end": {
+        "hour": 22,
+        "minute": 15
+      }
+    },
+    "locations": [
+      {
+        "id": "location_study",
+        "name": "Private study"
+      },
+      {
+        "id": "location_kitchen",
+        "name": "Kitchen"
+      },
+      {
+        "id": "location_terrace",
+        "name": "Rear terrace"
+      },
+      {
+        "id": "location_dining_room",
+        "name": "Dining room"
+      },
+      {
+        "id": "location_corridor",
+        "name": "Ground-floor corridor"
+      }
+    ],
+    "events": [
+      {
+        "id": "timeline_event_elena_kitchen",
+        "kind": "presence",
+        "description": "Elena remained in the kitchen during the critical period.",
+        "actor_ids": [
+          "suspect_elena_ashcroft"
+        ],
+        "location_id": "location_kitchen",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      },
+      {
+        "id": "timeline_event_maya_terrace",
+        "kind": "presence",
+        "description": "Maya was outside on the rear terrace taking a phone call.",
+        "actor_ids": [
+          "suspect_maya_sen"
+        ],
+        "location_id": "location_terrace",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      },
+      {
+        "id": "timeline_event_daniel_dining_room",
+        "kind": "presence",
+        "description": "Daniel remained in the dining room.",
+        "actor_ids": [
+          "suspect_daniel_cross"
+        ],
+        "location_id": "location_dining_room",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      },
+      {
+        "id": "timeline_event_adrian_study",
+        "kind": "presence",
+        "description": "Adrian worked alone in his private study.",
+        "actor_ids": [
+          "victim_adrian_ashcroft"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 12
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_corridor",
+        "kind": "presence",
+        "description": "Marcus approached the study through the corridor.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_corridor",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 7
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_enters_study",
+        "kind": "presence",
+        "description": "Marcus confronted Adrian inside the study.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 7
+          },
+          "end": {
+            "hour": 22,
+            "minute": 12
+          }
+        }
+      },
+      {
+        "id": "timeline_event_murder",
+        "kind": "murder",
+        "description": "Marcus killed Adrian with the brass desk ornament.",
+        "actor_ids": [
+          "victim_adrian_ashcroft",
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 12
+          },
+          "end": {
+            "hour": 22,
+            "minute": 13
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_after_murder",
+        "kind": "presence",
+        "description": "Marcus remained briefly in the study before leaving.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 13
+          },
+          "end": {
+            "hour": 22,
+            "minute": 14
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_returns",
+        "kind": "presence",
+        "description": "Marcus returned to the dining room after leaving the study.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_dining_room",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 14
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      }
+    ]
+  },
   "accusation_options": {
     "motives": [
       "Adrian discovered Marcus had been diverting company funds and intended to expose him.",

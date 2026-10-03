@@ -90,6 +90,48 @@ def valid_case_payload() -> dict:
                 "kind": "digital",
             }
         ],
+        "timeline": {
+            "murder_window": {
+                "start": {
+                    "hour": 21,
+                    "minute": 20,
+                },
+                "end": {
+                    "hour": 21,
+                    "minute": 40,
+                },
+            },
+            "locations": [
+                {
+                    "id": "location_office",
+                    "name": "Private office",
+                },
+            ],
+            "events": [
+                {
+                    "id": "timeline_event_murder",
+                    "kind": "murder",
+                    "description": (
+                        "Suspect Two killed Alex in the office."
+                    ),
+                    "actor_ids": [
+                        "victim_alex_hart",
+                        "suspect_two",
+                    ],
+                    "location_id": "location_office",
+                    "interval": {
+                        "start": {
+                            "hour": 21,
+                            "minute": 29,
+                        },
+                        "end": {
+                            "hour": 21,
+                            "minute": 30,
+                        },
+                    },
+                },
+            ],
+        },
         "accusation_options": {
             "motives": [
                 "The victim discovered missing company funds.",
@@ -192,4 +234,54 @@ def test_load_case_rejects_wrong_suspect_count(
     )
 
     with pytest.raises(CaseSchemaError):
+        load_case(path)
+
+
+def test_load_case_rejects_timeline_paradox(
+    tmp_path,
+) -> None:
+    payload = valid_case_payload()
+
+    payload["timeline"]["locations"].append(
+        {
+            "id": "location_hall",
+            "name": "Hall",
+        }
+    )
+
+    payload["timeline"]["events"].append(
+        {
+            "id": "timeline_event_impossible_alibi",
+            "kind": "presence",
+            "description": (
+                "Suspect Two was supposedly in the hall."
+            ),
+            "actor_ids": [
+                "suspect_two",
+            ],
+            "location_id": "location_hall",
+            "interval": {
+                "start": {
+                    "hour": 21,
+                    "minute": 29,
+                },
+                "end": {
+                    "hour": 21,
+                    "minute": 31,
+                },
+            },
+        }
+    )
+
+    path = tmp_path / "timeline_paradox.json"
+
+    path.write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        CaseSchemaError,
+        match="two locations at the same time",
+    ):
         load_case(path)

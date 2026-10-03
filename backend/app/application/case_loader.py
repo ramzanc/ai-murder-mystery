@@ -6,6 +6,11 @@ from pydantic import ValidationError
 
 from app.domain.case import CaseManifest
 
+from app.validation.timeline import (
+    TimelineConsistencyError,
+    validate_timeline,
+)
+
 class CaseLoadError(RuntimeError):
     """Base exception for failures while loading a case."""
 
@@ -57,11 +62,41 @@ def load_case(path: str | Path) -> CaseManifest:
         ) from exc
 
     try:
-        return CaseManifest.model_validate(payload)
+        case = CaseManifest.model_validate(payload)
     except ValidationError as exc:
         raise CaseSchemaError(
             _format_schema_error(case_path, exc)
         ) from exc
+
+    valid_actor_ids = {
+        case.victim.id,
+        *(
+            suspect.id
+            for suspect in case.suspects
+        ),
+    }
+
+    required_murder_actor_ids = {
+        case.victim.id,
+        case.solution.killer_id,
+    }
+
+    try:
+        validate_timeline(
+            case.timeline,
+            valid_actor_ids=valid_actor_ids,
+            required_murder_actor_ids=(
+                required_murder_actor_ids
+            ),
+        )
+    except TimelineConsistencyError as exc:
+        raise CaseSchemaError(
+            f"Case file '{case_path}' has an "
+            f"inconsistent timeline:\n"
+            f"  - {exc}"
+        ) from exc
+
+    return case
 
 def _format_schema_error(
     case_path: Path,
