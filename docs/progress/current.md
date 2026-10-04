@@ -2,8 +2,8 @@
 
 ## Current checkpoint
 
-Day 8 complete: evidence provenance, typed unlock rules, and deterministic
-clue-reachability validation.
+Day 9 complete: reusable case-validation pipeline with structured hard errors
+and warnings.
 
 ## Implemented
 
@@ -100,6 +100,21 @@ clue-reachability validation.
 - Added Day 8 unit coverage for discriminated unions, provenance, invalid
   references, circular dependencies, evidence chains, and multiple unlock
   paths.
+- Added immutable structured validation findings containing:
+  - severity
+  - stable machine-readable code
+  - case-data path
+  - human-readable message
+- Added HARD_ERROR and WARNING severity levels.
+- Added immutable validation reports with separated hard errors and warnings.
+- Made hard errors block case approval while warnings remain non-blocking.
+- Added a composable validator runner that collects all findings.
+- Added an ordered validator registry for reusable rule composition.
+- Adapted timeline, knowledge, and evidence consistency checks into structured
+  case validators.
+- Added a warning for unreachable non-critical evidence.
+- Added Day 9 unit coverage for clean, warning-only, and blocked validation
+  reports.
 
 ## Verification
 
@@ -130,6 +145,11 @@ Expected:
 - Unlock rules reference valid suspects, evidence, and supported intents.
 - Every murder-critical clue has at least one reachable discovery path.
 - Circular evidence dependencies cannot make critical clues unreachable.
+- The sample case produces a clean, approved validation report.
+- Warning-only findings do not block case approval.
+- Hard-error findings block case approval.
+- Every validation finding contains a severity, code, path, and message.
+- The validation runner continues collecting findings after a hard error.
 
 ## Current playable result
 
@@ -139,5 +159,5 @@ reveal.
 
 ## Next checkpoint
 
-Day 9: build a reusable validator framework with structured hard errors and
-warnings.
+Day 10: expose the validator suite through a case-linter CLI with human-readable
+and machine-readable output.
