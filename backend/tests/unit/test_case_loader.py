@@ -80,6 +80,12 @@ def valid_case_payload() -> dict:
                     "A broken fountain pen was found beside the desk."
                 ),
                 "kind": "physical",
+                "source_event_id": "timeline_event_murder",
+                "unlock_rules": [
+                    {
+                        "kind": "starting",
+                    },
+                ],
             },
             {
                 "id": "evidence_access_record",
@@ -88,7 +94,19 @@ def valid_case_payload() -> dict:
                     "An access record places one suspect near the office."
                 ),
                 "kind": "digital",
-            }
+                "source_event_id": "timeline_event_murder",
+                "unlock_rules": [
+                    {
+                        "kind": "question",
+                        "suspect_id": "suspect_two",
+                        "intent": "alibi",
+                    },
+                    {
+                        "kind": "evidence",
+                        "evidence_id": "evidence_test_item",
+                    },
+                ],
+            },
         ],
         "timeline": {
             "murder_window": {

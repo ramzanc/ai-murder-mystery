@@ -2,6 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.domain.unlock import UnlockRule
+
 
 class EvidenceKind(str, Enum):
     PHYSICAL = "physical"
@@ -28,3 +30,10 @@ class Evidence(BaseModel):
         max_length=1000,
     )
     kind: EvidenceKind
+
+    source_event_id: str | None = Field(
+        default=None,
+        pattern=r"^timeline_event_[a-z0-9_]+$",
+    )
+
+    unlock_rules: tuple[UnlockRule, ...] = ()

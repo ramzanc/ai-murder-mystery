@@ -53,22 +53,52 @@
       "id": "evidence_cracked_watch",
       "title": "Cracked Wristwatch",
       "description": "Adrian's wristwatch was found beneath the desk with its glass cracked and its hands stopped at 10:12 PM.",
-      "kind": "physical"
+      "kind": "physical",
+      "source_event_id": "timeline_event_murder",
+      "unlock_rules": [
+        {
+          "kind": "starting"
+        }
+      ]
     },
     {
       "id": "evidence_door_log",
       "title": "Study Door Access Log",
       "description": "The electronic lock recorded Marcus Reed's access code entering the study at 10:07 PM and leaving at 10:14 PM.",
-      "kind": "digital"
+      "kind": "digital",
+      "source_event_id": "timeline_event_marcus_enters_study",
+      "unlock_rules": [
+        {
+          "kind": "question",
+          "suspect_id": "suspect_marcus_reed",
+          "intent": "alibi"
+        },
+        {
+          "kind": "evidence",
+          "evidence_id": "evidence_cracked_watch"
+        }
+      ]
     },
     {
       "id": "evidence_torn_note",
       "title": "Torn Note",
       "description": "Half of a handwritten note was recovered from the study wastebasket. The surviving text reads: '...cannot let this become public tomorrow.'",
-      "kind": "document"
+      "kind": "document",
+      "source_event_id": "timeline_event_marcus_enters_study",
+      "unlock_rules": [
+        {
+          "kind": "question",
+          "suspect_id": "suspect_marcus_reed",
+          "intent": "secret"
+        },
+        {
+          "kind": "evidence",
+          "evidence_id": "evidence_door_log"
+        }
+      ]
     }
   ],
-    "timeline": {
+  "timeline": {
     "murder_window": {
       "start": {
         "hour": 22,

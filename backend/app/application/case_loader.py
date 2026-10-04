@@ -13,6 +13,10 @@ from app.validation.timeline import (
     TimelineConsistencyError,
     validate_timeline,
 )
+from app.validation.evidence import (
+    EvidenceConsistencyError,
+    validate_evidence,
+)
 
 
 class CaseLoadError(RuntimeError):
@@ -109,6 +113,22 @@ def load_case(path: str | Path) -> CaseManifest:
         raise CaseSchemaError(
             f"Case file '{case_path}' has inconsistent "
             f"suspect knowledge:\n"
+            f"  - {exc}"
+        ) from exc
+
+    try:
+        validate_evidence(
+            evidence_items=case.initial_evidence,
+            suspects=case.suspects,
+            timeline=case.timeline,
+            critical_evidence_ids=(
+                case.solution.key_evidence_ids
+            ),
+        )
+    except EvidenceConsistencyError as exc:
+        raise CaseSchemaError(
+            f"Case file '{case_path}' has inconsistent "
+            f"evidence:\n"
             f"  - {exc}"
         ) from exc
 

@@ -2,8 +2,8 @@
 
 ## Current checkpoint
 
-Day 7 complete: canonical truth, suspect observations, subjective beliefs, and
-knowledge-flow validation.
+Day 8 complete: evidence provenance, typed unlock rules, and deterministic
+clue-reachability validation.
 
 ## Implemented
 
@@ -86,6 +86,20 @@ knowledge-flow validation.
 - Integrated knowledge consistency validation into case loading.
 - Added Day 7 unit coverage for causal sources, private knowledge boundaries,
   divergent perception, incorrect beliefs, and cross-suspect leakage.
+- Added canonical source-event provenance to evidence.
+- Added discriminated unlock-rule models for:
+  - evidence available at investigation start
+  - questioning a specific suspect about a supported intent
+  - discovering prerequisite evidence
+- Reused deterministic question topics as validated unlock intents.
+- Added evidence-rule reference validation for suspects and evidence.
+- Added a fixed-point reachability algorithm for clue graphs.
+- Rejected circular or otherwise unreachable critical-evidence paths.
+- Added multiple legal discovery paths to the sample case.
+- Integrated evidence consistency validation into case loading.
+- Added Day 8 unit coverage for discriminated unions, provenance, invalid
+  references, circular dependencies, evidence chains, and multiple unlock
+  paths.
 
 ## Verification
 
@@ -112,6 +126,10 @@ Expected:
 - A wrong accusation still locks further official scoring.
 - The canonical reveal remains unavailable until final submission.
 - Canonical case data remains unchanged.
+- Every evidence item has a canonical timeline source.
+- Unlock rules reference valid suspects, evidence, and supported intents.
+- Every murder-critical clue has at least one reachable discovery path.
+- Circular evidence dependencies cannot make critical clues unreachable.
 
 ## Current playable result
 
@@ -121,4 +139,5 @@ reveal.
 
 ## Next checkpoint
 
-Day 8: model evidence causality and multiple legal clue-unlock paths.
+Day 9: build a reusable validator framework with structured hard errors and
+warnings.
