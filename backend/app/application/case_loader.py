@@ -5,19 +5,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.domain.case import CaseManifest
-from app.validation.knowledge import (
-    KnowledgeConsistencyError,
-    validate_knowledge,
-)
-from app.validation.timeline import (
-    TimelineConsistencyError,
-    validate_timeline,
-)
-from app.validation.evidence import (
-    EvidenceConsistencyError,
-    validate_evidence,
-)
-
+from app.validation.case_rules import validate_case
 
 class CaseLoadError(RuntimeError):
     """Base exception for failures while loading a case."""
@@ -36,11 +24,16 @@ class CaseJsonError(CaseLoadError):
 
 
 class CaseSchemaError(CaseLoadError):
-    """Raised when JSON does not satisfy the CaseManifest schema."""
+    """Raised when a case definition is structurally or semantically invalid."""
 
 
-def load_case(path: str | Path) -> CaseManifest:
-    """Load and validate a case definition from a JSON file."""
+def load_case_manifest(path: str | Path) -> CaseManifest:
+    """
+    Load a structurally valid case manifest.
+
+    This function handles filesystem, JSON, and Pydantic schema validation.
+    It intentionally does not run the semantic case-validator suite.
+    """
 
     case_path = Path(path).expanduser()
 
@@ -70,67 +63,38 @@ def load_case(path: str | Path) -> CaseManifest:
         ) from exc
 
     try:
-        case = CaseManifest.model_validate(payload)
+        return CaseManifest.model_validate(payload)
     except ValidationError as exc:
         raise CaseSchemaError(
             _format_schema_error(case_path, exc)
         ) from exc
 
-    valid_actor_ids = {
-        case.victim.id,
-        *(
-            suspect.id
-            for suspect in case.suspects
-        ),
-    }
 
-    required_murder_actor_ids = {
-        case.victim.id,
-        case.solution.killer_id,
-    }
+def load_case(path: str | Path) -> CaseManifest:
+    """
+    Load a case that is safe for the application to use.
 
-    try:
-        validate_timeline(
-            case.timeline,
-            valid_actor_ids=valid_actor_ids,
-            required_murder_actor_ids=(
-                required_murder_actor_ids
-            ),
+    Unlike load_case_manifest(), this function also rejects semantic
+    consistency errors discovered by the complete validator suite.
+    """
+
+    case_path = Path(path).expanduser()
+    case = load_case_manifest(case_path)
+    report = validate_case(case)
+
+    if report.hard_errors:
+        details = "\n".join(
+            (
+                f"  - [{finding.code}] "
+                f"{finding.path}: {finding.message}"
+            )
+            for finding in report.hard_errors
         )
-    except TimelineConsistencyError as exc:
-        raise CaseSchemaError(
-            f"Case file '{case_path}' has an "
-            f"inconsistent timeline:\n"
-            f"  - {exc}"
-        ) from exc
 
-    try:
-        validate_knowledge(
-            suspects=case.suspects,
-            timeline=case.timeline,
-        )
-    except KnowledgeConsistencyError as exc:
         raise CaseSchemaError(
-            f"Case file '{case_path}' has inconsistent "
-            f"suspect knowledge:\n"
-            f"  - {exc}"
-        ) from exc
-
-    try:
-        validate_evidence(
-            evidence_items=case.initial_evidence,
-            suspects=case.suspects,
-            timeline=case.timeline,
-            critical_evidence_ids=(
-                case.solution.key_evidence_ids
-            ),
+            f"Case file '{case_path}' failed consistency validation:\n"
+            f"{details}"
         )
-    except EvidenceConsistencyError as exc:
-        raise CaseSchemaError(
-            f"Case file '{case_path}' has inconsistent "
-            f"evidence:\n"
-            f"  - {exc}"
-        ) from exc
 
     return case
 

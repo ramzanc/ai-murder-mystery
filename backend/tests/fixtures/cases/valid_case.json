@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "id": "case_ashcroft_study",
+  "title": "The Ashcroft Study Murder",
+  "difficulty": "medium",
+  "dossier": {
+    "summary": "Renowned architect Adrian Ashcroft was found dead inside his private study shortly after a small dinner gathering at Ashcroft House. The study door was closed, nothing obvious appeared stolen, and every remaining guest claims to have been elsewhere when he died.",
+    "location": "Ashcroft House, Westbridge",
+    "incident_time": "10:15 PM"
+  },
+  "victim": {
+    "id": "victim_adrian_ashcroft",
+    "name": "Adrian Ashcroft",
+    "age": 58,
+    "public_profile": "A celebrated architect known for major civic projects and an exacting personality. He hosted a private dinner at his home on the night of his death."
+  },
+  "suspects": [
+    {
+      "id": "suspect_elena_ashcroft",
+      "name": "Elena Ashcroft",
+      "age": 52,
+      "occupation": "Gallery owner",
+      "relationship_to_victim": "Wife",
+      "public_profile": "Adrian's wife of twenty-six years. She says she spent the critical period speaking with a caterer in the kitchen."
+    },
+    {
+      "id": "suspect_marcus_reed",
+      "name": "Marcus Reed",
+      "age": 41,
+      "occupation": "Architect",
+      "relationship_to_victim": "Business partner",
+      "public_profile": "Adrian's long-time business partner. Their firm had recently won a major public development contract."
+    },
+    {
+      "id": "suspect_maya_sen",
+      "name": "Maya Sen",
+      "age": 34,
+      "occupation": "Investigative journalist",
+      "relationship_to_victim": "Dinner guest",
+      "public_profile": "A journalist who had been interviewing Adrian about his career. She says she stepped outside to take a phone call."
+    },
+    {
+      "id": "suspect_daniel_cross",
+      "name": "Daniel Cross",
+      "age": 29,
+      "occupation": "Junior architect",
+      "relationship_to_victim": "Former employee",
+      "public_profile": "A talented architect who left Adrian's firm after a public disagreement six months earlier. Adrian unexpectedly invited him to the dinner."
+    }
+  ],
+  "initial_evidence": [
+    {
+      "id": "evidence_cracked_watch",
+      "title": "Cracked Wristwatch",
+      "description": "Adrian's wristwatch was found beneath the desk with its glass cracked and its hands stopped at 10:12 PM.",
+      "kind": "physical",
+      "source_event_id": "timeline_event_murder",
+      "unlock_rules": [
+        {
+          "kind": "starting"
+        }
+      ]
+    },
+    {
+      "id": "evidence_door_log",
+      "title": "Study Door Access Log",
+      "description": "The electronic lock recorded Marcus Reed's access code entering the study at 10:07 PM and leaving at 10:14 PM.",
+      "kind": "digital",
+      "source_event_id": "timeline_event_marcus_enters_study",
+      "unlock_rules": [
+        {
+          "kind": "question",
+          "suspect_id": "suspect_marcus_reed",
+          "intent": "alibi"
+        },
+        {
+          "kind": "evidence",
+          "evidence_id": "evidence_cracked_watch"
+        }
+      ]
+    },
+    {
+      "id": "evidence_torn_note",
+      "title": "Torn Note",
+      "description": "Half of a handwritten note was recovered from the study wastebasket. The surviving text reads: '...cannot let this become public tomorrow.'",
+      "kind": "document",
+      "source_event_id": "timeline_event_marcus_enters_study",
+      "unlock_rules": [
+        {
+          "kind": "question",
+          "suspect_id": "suspect_marcus_reed",
+          "intent": "secret"
+        },
+        {
+          "kind": "evidence",
+          "evidence_id": "evidence_door_log"
+        }
+      ]
+    }
+  ],
+  "timeline": {
+    "murder_window": {
+      "start": {
+        "hour": 22,
+        "minute": 5
+      },
+      "end": {
+        "hour": 22,
+        "minute": 15
+      }
+    },
+    "locations": [
+      {
+        "id": "location_study",
+        "name": "Private study"
+      },
+      {
+        "id": "location_kitchen",
+        "name": "Kitchen"
+      },
+      {
+        "id": "location_terrace",
+        "name": "Rear terrace"
+      },
+      {
+        "id": "location_dining_room",
+        "name": "Dining room"
+      },
+      {
+        "id": "location_corridor",
+        "name": "Ground-floor corridor"
+      }
+    ],
+    "events": [
+      {
+        "id": "timeline_event_elena_kitchen",
+        "kind": "presence",
+        "description": "Elena remained in the kitchen during the critical period.",
+        "actor_ids": [
+          "suspect_elena_ashcroft"
+        ],
+        "location_id": "location_kitchen",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      },
+      {
+        "id": "timeline_event_maya_terrace",
+        "kind": "presence",
+        "description": "Maya was outside on the rear terrace taking a phone call.",
+        "actor_ids": [
+          "suspect_maya_sen"
+        ],
+        "location_id": "location_terrace",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      },
+      {
+        "id": "timeline_event_daniel_dining_room",
+        "kind": "presence",
+        "description": "Daniel remained in the dining room.",
+        "actor_ids": [
+          "suspect_daniel_cross"
+        ],
+        "location_id": "location_dining_room",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      },
+      {
+        "id": "timeline_event_adrian_study",
+        "kind": "presence",
+        "description": "Adrian worked alone in his private study.",
+        "actor_ids": [
+          "victim_adrian_ashcroft"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 12
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_corridor",
+        "kind": "presence",
+        "description": "Marcus approached the study through the corridor.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_corridor",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 0
+          },
+          "end": {
+            "hour": 22,
+            "minute": 7
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_enters_study",
+        "kind": "presence",
+        "description": "Marcus confronted Adrian inside the study.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 7
+          },
+          "end": {
+            "hour": 22,
+            "minute": 12
+          }
+        }
+      },
+      {
+        "id": "timeline_event_murder",
+        "kind": "murder",
+        "description": "Marcus killed Adrian with the brass desk ornament.",
+        "actor_ids": [
+          "victim_adrian_ashcroft",
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 12
+          },
+          "end": {
+            "hour": 22,
+            "minute": 13
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_after_murder",
+        "kind": "presence",
+        "description": "Marcus remained briefly in the study before leaving.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_study",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 13
+          },
+          "end": {
+            "hour": 22,
+            "minute": 14
+          }
+        }
+      },
+      {
+        "id": "timeline_event_marcus_returns",
+        "kind": "presence",
+        "description": "Marcus returned to the dining room after leaving the study.",
+        "actor_ids": [
+          "suspect_marcus_reed"
+        ],
+        "location_id": "location_dining_room",
+        "interval": {
+          "start": {
+            "hour": 22,
+            "minute": 14
+          },
+          "end": {
+            "hour": 22,
+            "minute": 20
+          }
+        }
+      }
+    ]
+  },
+  "accusation_options": {
+    "motives": [
+      "Adrian discovered Marcus had been diverting company funds and intended to expose him.",
+      "A dispute over inheritance.",
+      "Revenge for a personal betrayal.",
+      "An attempt to hide an affair."
+    ],
+    "methods": [
+      "Poison was placed in Adrian's drink.",
+      "Marcus struck Adrian with the heavy brass desk ornament during their confrontation in the study.",
+      "Adrian was strangled with a curtain cord.",
+      "Adrian was pushed from the study balcony."
+    ]
+  },
+  "solution": {
+    "killer_id": "suspect_marcus_reed",
+    "motive": "Adrian discovered Marcus had been diverting company funds and intended to expose him.",
+    "method": "Marcus struck Adrian with the heavy brass desk ornament during their confrontation in the study.",
+    "key_evidence_ids": [
+      "evidence_cracked_watch",
+      "evidence_door_log"
+    ],
+    "explanation": "Marcus confronted Adrian in the study after learning that Adrian intended to expose his financial misconduct. The study door access log places Marcus at the room during the critical period, while the cracked wristwatch helps establish the timing of the confrontation. The torn note provides supporting context but is not required to identify the killer."
+  }
+}
