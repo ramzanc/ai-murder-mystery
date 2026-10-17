@@ -1,6 +1,14 @@
+from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routes.cases import find_case
 from app.api.schemas import (
@@ -19,21 +27,42 @@ from app.application.investigation_service import (
     start_session,
     submit_final_theory,
 )
-from app.domain.investigation import InvestigationSession
+from app.infrastructure.database import get_db_session
+from app.infrastructure.persistence.models import (
+    InvestigationSessionRow,
+)
+
 
 router = APIRouter(
     prefix="/sessions",
     tags=["sessions"],
 )
 
-_SESSIONS: dict[UUID, InvestigationSession] = {}
+DatabaseSession = Annotated[
+    AsyncSession,
+    Depends(get_db_session),
+]
 
-def _find_session(
+
+async def _find_session_row(
     session_id: UUID,
-) -> InvestigationSession:
-    session = _SESSIONS.get(session_id)
+    database: AsyncSession,
+    *,
+    for_update: bool = False,
+) -> InvestigationSessionRow:
+    statement = select(
+        InvestigationSessionRow
+    ).where(
+        InvestigationSessionRow.id == session_id
+    )
 
-    if session is None:
+    if for_update:
+        statement = statement.with_for_update()
+
+    result = await database.execute(statement)
+    row = result.scalar_one_or_none()
+
+    if row is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=(
@@ -42,7 +71,7 @@ def _find_session(
             ),
         )
 
-    return session
+    return row
 
 
 @router.post(
@@ -50,8 +79,9 @@ def _find_session(
     response_model=SessionResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_session(
+async def create_session(
     request: CreateSessionRequest,
+    database: DatabaseSession,
 ) -> SessionResponse:
     case = find_case(request.case_id)
 
@@ -65,13 +95,19 @@ def create_session(
         )
 
     session_id = uuid4()
-    session = start_session(case)
+    domain_session = start_session(case)
 
-    _SESSIONS[session_id] = session
+    row = InvestigationSessionRow.from_domain(
+        session_id=session_id,
+        session=domain_session,
+    )
+
+    async with database.begin():
+        database.add(row)
 
     return SessionResponse.from_domain(
         session_id=session_id,
-        session=session,
+        session=domain_session,
     )
 
 
@@ -80,14 +116,20 @@ def create_session(
     response_model=SessionResponse,
     status_code=status.HTTP_200_OK,
 )
-def get_session(
+async def get_session(
     session_id: UUID,
+    database: DatabaseSession,
 ) -> SessionResponse:
-    session = _find_session(session_id)
+    row = await _find_session_row(
+        session_id,
+        database,
+    )
+
+    domain_session = row.to_domain()
 
     return SessionResponse.from_domain(
-        session_id=session_id,
-        session=session,
+        session_id=row.id,
+        session=domain_session,
     )
 
 
@@ -96,23 +138,29 @@ def get_session(
     response_model=tuple[PublicEvidenceResponse, ...],
     status_code=status.HTTP_200_OK,
 )
-def get_discovered_evidence(
+async def get_discovered_evidence(
     session_id: UUID,
+    database: DatabaseSession,
 ) -> tuple[PublicEvidenceResponse, ...]:
-    session = _find_session(session_id)
-    case = find_case(session.case_id)
+    row = await _find_session_row(
+        session_id,
+        database,
+    )
+
+    domain_session = row.to_domain()
+    case = find_case(domain_session.case_id)
 
     if case is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=(
-                f"Case {session.case_id!r} "
+                f"Case {domain_session.case_id!r} "
                 "was not found."
             ),
         )
 
     discovered_ids = set(
-        session.discovered_evidence_ids
+        domain_session.discovered_evidence_ids
     )
 
     return tuple(
@@ -127,39 +175,47 @@ def get_discovered_evidence(
     response_model=SessionResponse,
     status_code=status.HTTP_200_OK,
 )
-def question_suspect(
+async def question_suspect(
     session_id: UUID,
     request: AskQuestionRequest,
+    database: DatabaseSession,
 ) -> SessionResponse:
-    session = _find_session(session_id)
-    case = find_case(session.case_id)
-
-    if case is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"Case {session.case_id!r} "
-                "was not found."
-            ),
+    async with database.begin():
+        row = await _find_session_row(
+            session_id,
+            database,
+            for_update=True,
         )
 
-    try:
-        updated_session = ask_question(
-            case=case,
-            session=session,
-            suspect_id=request.suspect_id,
-            topic=request.to_domain_topic(),
-        )
-    except InvestigationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+        domain_session = row.to_domain()
+        case = find_case(domain_session.case_id)
 
-    _SESSIONS[session_id] = updated_session
+        if case is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=(
+                    f"Case {domain_session.case_id!r} "
+                    "was not found."
+                ),
+            )
+
+        try:
+            updated_session = ask_question(
+                case=case,
+                session=domain_session,
+                suspect_id=request.suspect_id,
+                topic=request.to_domain_topic(),
+            )
+        except InvestigationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+
+        row.replace_snapshot(updated_session)
 
     return SessionResponse.from_domain(
-        session_id=session_id,
+        session_id=row.id,
         session=updated_session,
     )
 
@@ -169,44 +225,54 @@ def question_suspect(
     response_model=TheorySubmissionResponse,
     status_code=status.HTTP_200_OK,
 )
-def submit_theory(
+async def submit_theory(
     session_id: UUID,
     request: SubmitTheoryRequest,
+    database: DatabaseSession,
 ) -> TheorySubmissionResponse:
-    session = _find_session(session_id)
-    case = find_case(session.case_id)
-
-    if case is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"Case {session.case_id!r} "
-                "was not found."
-            ),
+    async with database.begin():
+        row = await _find_session_row(
+            session_id,
+            database,
+            for_update=True,
         )
 
-    try:
-        updated_session, score = submit_final_theory(
-            case=case,
-            session=session,
-            theory=request.to_domain(),
-        )
-    except InvestigationAlreadyFinalizedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        ) from exc
-    except InvestigationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+        domain_session = row.to_domain()
+        case = find_case(domain_session.case_id)
 
-    _SESSIONS[session_id] = updated_session
+        if case is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=(
+                    f"Case {domain_session.case_id!r} "
+                    "was not found."
+                ),
+            )
+
+        try:
+            updated_session, score = (
+                submit_final_theory(
+                    case=case,
+                    session=domain_session,
+                    theory=request.to_domain(),
+                )
+            )
+        except InvestigationAlreadyFinalizedError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(exc),
+            ) from exc
+        except InvestigationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+
+        row.replace_snapshot(updated_session)
 
     return TheorySubmissionResponse(
         session=SessionResponse.from_domain(
-            session_id=session_id,
+            session_id=row.id,
             session=updated_session,
         ),
         score=TheoryScoreResponse.from_domain(score),

@@ -1,14 +1,21 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 
-client = TestClient(app)
-
 CASE_ID = "case_ashcroft_study"
 
 
-def test_get_case_returns_public_case_data() -> None:
+@pytest.fixture
+def client():
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+def test_get_case_returns_public_case_data(
+    client: TestClient,
+) -> None:
     response = client.get(f"/cases/{CASE_ID}")
 
     assert response.status_code == 200
@@ -24,7 +31,9 @@ def test_get_case_returns_public_case_data() -> None:
     assert payload["initial_evidence"]
 
 
-def test_public_case_has_only_expected_top_level_fields() -> None:
+def test_public_case_has_only_expected_top_level_fields(
+    client: TestClient,
+) -> None:
     response = client.get(f"/cases/{CASE_ID}")
 
     assert response.status_code == 200
@@ -41,7 +50,9 @@ def test_public_case_has_only_expected_top_level_fields() -> None:
     }
 
 
-def test_public_case_does_not_leak_hidden_truth() -> None:
+def test_public_case_does_not_leak_hidden_truth(
+    client: TestClient,
+) -> None:
     response = client.get(f"/cases/{CASE_ID}")
 
     assert response.status_code == 200
@@ -60,7 +71,9 @@ def test_public_case_does_not_leak_hidden_truth() -> None:
     assert '"explanation"' not in serialized
 
 
-def test_unknown_case_returns_404() -> None:
+def test_unknown_case_returns_404(
+    client: TestClient,
+) -> None:
     response = client.get(
         "/cases/case_not_real"
     )

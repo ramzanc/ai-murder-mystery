@@ -1,13 +1,12 @@
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.application.case_loader import load_case
 from app.main import app
 
-
-client = TestClient(app)
 
 CASE_ID = "case_ashcroft_study"
 
@@ -19,7 +18,15 @@ SAMPLE_CASE_PATH = (
 )
 
 
-def create_session() -> dict:
+@pytest.fixture
+def client():
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+def create_session(
+    client: TestClient,
+) -> dict:
     response = client.post(
         "/sessions",
         json={"case_id": CASE_ID},
@@ -30,8 +37,10 @@ def create_session() -> dict:
     return response.json()
 
 
-def test_create_session_returns_runtime_session() -> None:
-    payload = create_session()
+def test_create_session_returns_runtime_session(
+    client: TestClient,
+) -> None:
+    payload = create_session(client)
 
     UUID(payload["id"])
 
@@ -42,7 +51,9 @@ def test_create_session_returns_runtime_session() -> None:
     assert payload["official_score"] is None
 
 
-def test_create_session_for_unknown_case_returns_404() -> None:
+def test_create_session_for_unknown_case_returns_404(
+    client: TestClient,
+) -> None:
     response = client.post(
         "/sessions",
         json={"case_id": "case_not_real"},
@@ -51,8 +62,10 @@ def test_create_session_for_unknown_case_returns_404() -> None:
     assert response.status_code == 404
 
 
-def test_get_session_returns_current_snapshot() -> None:
-    created = create_session()
+def test_get_session_returns_current_snapshot(
+    client: TestClient,
+) -> None:
+    created = create_session(client)
 
     response = client.get(
         f"/sessions/{created['id']}"
@@ -62,7 +75,9 @@ def test_get_session_returns_current_snapshot() -> None:
     assert response.json() == created
 
 
-def test_unknown_session_returns_404() -> None:
+def test_unknown_session_returns_404(
+    client: TestClient,
+) -> None:
     response = client.get(
         f"/sessions/{uuid4()}"
     )
@@ -70,8 +85,10 @@ def test_unknown_session_returns_404() -> None:
     assert response.status_code == 404
 
 
-def test_get_discovered_evidence_returns_public_fields() -> None:
-    session = create_session()
+def test_get_discovered_evidence_returns_public_fields(
+    client: TestClient,
+) -> None:
+    session = create_session(client)
 
     response = client.get(
         f"/sessions/{session['id']}/evidence"
@@ -95,8 +112,10 @@ def test_get_discovered_evidence_returns_public_fields() -> None:
     assert '"unlock_rules"' not in response.text
 
 
-def test_question_suspect_updates_session() -> None:
-    session = create_session()
+def test_question_suspect_updates_session(
+    client: TestClient,
+) -> None:
+    session = create_session(client)
 
     response = client.post(
         f"/sessions/{session['id']}/questions",
@@ -123,8 +142,10 @@ def test_question_suspect_updates_session() -> None:
     assert event["answer"]
 
 
-def test_invalid_question_topic_returns_422() -> None:
-    session = create_session()
+def test_invalid_question_topic_returns_422(
+    client: TestClient,
+) -> None:
+    session = create_session(client)
 
     response = client.post(
         f"/sessions/{session['id']}/questions",
@@ -137,9 +158,11 @@ def test_invalid_question_topic_returns_422() -> None:
     assert response.status_code == 422
 
 
-def test_submit_theory_scores_and_finalizes_session() -> None:
+def test_submit_theory_scores_and_finalizes_session(
+    client: TestClient,
+) -> None:
     case = load_case(SAMPLE_CASE_PATH)
-    session = create_session()
+    session = create_session(client)
 
     response = client.post(
         f"/sessions/{session['id']}/theory",
@@ -169,9 +192,11 @@ def test_submit_theory_scores_and_finalizes_session() -> None:
     assert '"explanation"' not in response.text
 
 
-def test_second_theory_submission_returns_conflict() -> None:
+def test_second_theory_submission_returns_conflict(
+    client: TestClient,
+) -> None:
     case = load_case(SAMPLE_CASE_PATH)
-    session = create_session()
+    session = create_session(client)
 
     theory_payload = {
         "killer_id": str(

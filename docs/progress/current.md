@@ -2,8 +2,9 @@
 
 ## Current checkpoint
 
-Day 10 complete: case-linter CLI with human-readable and machine-readable
-validation reports.
+Day 12 complete: investigation sessions persist in PostgreSQL through async
+SQLAlchemy, with Alembic-managed schema migrations and explicit database
+configuration.
 
 ## Implemented
 
@@ -128,6 +129,58 @@ validation reports.
 - Added valid and broken-timeline case fixtures.
 - Added Day 10 integration coverage for approved cases, blocked cases, JSON
   output, clean standard error, and missing files.
+- Added separate FastAPI routers for cases and investigation sessions.
+- Added explicit request and response DTOs for the public HTTP boundary.
+- Added domain-to-API mapping for cases, evidence, sessions, question events,
+  theories, and scores.
+- Prevented canonical truth from leaking through public case responses,
+  including:
+  - canonical timeline and solution
+  - suspect knowledge
+  - evidence provenance and unlock rules
+- Added `GET /cases/{case_id}` for player-visible case browsing.
+- Added `POST /sessions` with UUID identifiers and in-memory runtime storage.
+- Added `GET /sessions/{session_id}` for retrieving the current immutable
+  session snapshot.
+- Added `GET /sessions/{session_id}/evidence` for retrieving discovered
+  player-visible evidence.
+- Added `POST /sessions/{session_id}/questions` for deterministic suspect
+  questioning and copy-on-write session updates.
+- Added `POST /sessions/{session_id}/theory` for one-time final theory
+  submission and deterministic scoring.
+- Added HTTP error behavior for:
+  - missing cases and sessions with 404 responses
+  - invalid investigation operations with 400 responses
+  - repeated final submissions with 409 responses
+  - invalid request DTOs with 422 responses
+- Added Day 11 API coverage for public case fields, hidden-truth protection,
+  session creation and retrieval, evidence responses, questioning, request
+  validation, final scoring, and finalization conflicts.
+- Added environment-based database configuration using Pydantic Settings.
+- Added an async SQLAlchemy engine and reusable `async_sessionmaker`.
+- Added request-scoped `AsyncSession` dependencies with rollback on errors.
+- Added a PostgreSQL `investigation_sessions` table containing:
+  - UUID primary keys
+  - indexed case IDs
+  - JSONB domain snapshots
+  - creation and update timestamps
+- Added explicit mapping between mutable SQLAlchemy persistence rows and
+  immutable `InvestigationSession` domain snapshots.
+- Replaced the in-memory API session dictionary with PostgreSQL persistence.
+- Made all session API handlers asynchronous.
+- Added explicit transaction boundaries for session creation, questioning, and
+  final-theory submission.
+- Added row-level `SELECT ... FOR UPDATE` locking for session state transitions
+  to prevent concurrent updates from overwriting one another.
+- Added application-lifespan disposal of the async database engine.
+- Added `GET /health/database` to verify PostgreSQL connectivity separately
+  from the process-level `GET /health` check.
+- Added an async Alembic environment connected to application configuration.
+- Added the initial Alembic migration for the `investigation_sessions` table
+  and its case-ID index.
+- Updated API tests to use explicit FastAPI startup and shutdown lifecycles.
+- Added Day 12 integration coverage for database health and persistence across
+  application restarts.
 
 ## Verification
 
@@ -135,6 +188,8 @@ Run from `backend/`:
 
 ```bash
 uv run pytest
+uv run alembic upgrade head
+uv run alembic current
 uv run python -m scripts.play_case
 uv run python -m scripts.validate_case cases/sample_case.json
 uv run python -m scripts.validate_case \
@@ -142,6 +197,8 @@ uv run python -m scripts.validate_case \
 uv run python -m scripts.validate_case \
   tests/fixtures/cases/broken_timeline.json \
   --format json
+uv run pytest tests/api -v
+uv run uvicorn app.main:app --reload
 ```
 
 Expected:
@@ -178,14 +235,46 @@ Expected:
   structured findings.
 - Missing case files produce a structured `case.load_failed` finding and exit
   1.
+- `GET /cases/case_ashcroft_study` returns only player-visible case data.
+- Public case responses never include the canonical timeline, solution,
+  suspect knowledge, evidence provenance, or evidence unlock rules.
+- `POST /sessions` persists a new PostgreSQL-backed investigation session and
+  returns 201 with a UUID session identifier.
+- `GET /sessions/{session_id}` returns the latest immutable session snapshot.
+- `GET /sessions/{session_id}/evidence` returns only public evidence fields.
+- `POST /sessions/{session_id}/questions` appends a deterministic question
+  event and stores the resulting copy-on-write session snapshot.
+- `POST /sessions/{session_id}/theory` scores and finalizes the official
+  theory exactly once.
+- Repeating a final theory submission returns 409 Conflict.
+- Unknown cases and sessions return 404, while invalid request DTOs return
+  422.
+- `GET /health/database` confirms that PostgreSQL is reachable.
+- A session created before application shutdown remains available after the
+  application and connection pool restart.
+- Session updates execute within transactions and lock the target row until
+  the transaction completes.
+- `uv run alembic upgrade head` creates the schema from an empty database.
+- Swagger UI exposes the complete persisted API flow at `/docs` while the
+  server is running.
 
 ## Current playable result
 
-Run `uv run python -m scripts.play_case` from `backend/`. The terminal now
-supports a complete deterministic investigation from dossier to canonical
-reveal.
+Run `uv run python -m scripts.play_case` from `backend/` for the complete
+terminal investigation, or run `uv run uvicorn app.main:app --reload` and open
+`http://127.0.0.1:8000/docs` for the HTTP version. The API supports public case
+browsing, PostgreSQL-backed session creation, evidence retrieval, suspect
+questioning, and final theory scoring without exposing canonical case truth.
+Investigation progress now survives backend process restarts.
+
+## Current limitation
+
+Persisted sessions do not yet have expiration, archival, or deletion rules.
+Application memory remains bounded because requests load only the requested
+row, but PostgreSQL storage will grow until a later retention policy and cleanup
+job are introduced.
 
 ## Next checkpoint
 
-Day 11: expose the deterministic game over HTTP with endpoints for case
-browsing, session creation, evidence discovery, and final theory submission.
+Day 13: introduce repository protocols and explicit transaction boundaries so
+application logic depends on abstractions rather than directly on SQLAlchemy.
