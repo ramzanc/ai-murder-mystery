@@ -2,8 +2,8 @@
 
 ## Current checkpoint
 
-Day 9 complete: reusable case-validation pipeline with structured hard errors
-and warnings.
+Day 10 complete: case-linter CLI with human-readable and machine-readable
+validation reports.
 
 ## Implemented
 
@@ -115,6 +115,19 @@ and warnings.
 - Added a warning for unreachable non-critical evidence.
 - Added Day 9 unit coverage for clean, warning-only, and blocked validation
   reports.
+- Separated structural manifest loading from semantic case validation.
+- Kept application case loading strict while allowing the linter to inspect
+  structurally valid but semantically inconsistent cases.
+- Added `scripts/validate_case.py` as the case-linter entrypoint.
+- Added human-readable reports grouped into hard errors and warnings.
+- Added machine-readable JSON reports for automated and AI-assisted repair
+  loops.
+- Added process exit-code behavior where approved cases exit 0 and blocked or
+  unloadable cases exit 1.
+- Converted case-loading failures into structured `case.load_failed` findings.
+- Added valid and broken-timeline case fixtures.
+- Added Day 10 integration coverage for approved cases, blocked cases, JSON
+  output, clean standard error, and missing files.
 
 ## Verification
 
@@ -123,6 +136,12 @@ Run from `backend/`:
 ```bash
 uv run pytest
 uv run python -m scripts.play_case
+uv run python -m scripts.validate_case cases/sample_case.json
+uv run python -m scripts.validate_case \
+  tests/fixtures/cases/broken_timeline.json
+uv run python -m scripts.validate_case \
+  tests/fixtures/cases/broken_timeline.json \
+  --format json
 ```
 
 Expected:
@@ -150,6 +169,15 @@ Expected:
 - Hard-error findings block case approval.
 - Every validation finding contains a severity, code, path, and message.
 - The validation runner continues collecting findings after a hard error.
+- The valid sample case receives an approved human-readable lint report and
+  exits 0.
+- The broken-timeline fixture receives a blocked report containing
+  `timeline.inconsistent` and exits 1.
+- Human-readable lint output groups hard errors and warnings separately.
+- JSON lint output is valid machine-readable JSON with summary counts and
+  structured findings.
+- Missing case files produce a structured `case.load_failed` finding and exit
+  1.
 
 ## Current playable result
 
@@ -159,5 +187,5 @@ reveal.
 
 ## Next checkpoint
 
-Day 10: expose the validator suite through a case-linter CLI with human-readable
-and machine-readable output.
+Day 11: expose the deterministic game over HTTP with endpoints for case
+browsing, session creation, evidence discovery, and final theory submission.
