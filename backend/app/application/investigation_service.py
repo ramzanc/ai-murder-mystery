@@ -1,5 +1,13 @@
+from uuid import UUID, uuid4
+
+from app.application.ports import (
+    CaseFinder,
+    SessionRecord,
+    UnitOfWork,
+)
 from app.application.scoring import TheoryScore, score_theory
 from app.domain.case import CaseManifest
+from app.domain.evidence import Evidence
 from app.domain.investigation import (
     InvestigationSession,
     QuestionEvent,
@@ -27,6 +35,14 @@ class SessionCaseMismatchError(InvestigationError):
 
 class InvestigationAlreadyFinalizedError(InvestigationError):
     """Raised when an investigation has already been finalized."""
+
+
+class CaseNotFoundError(LookupError):
+    """Raised when an investigation references an unknown case."""
+
+
+class SessionNotFoundError(LookupError):
+    """Raised when an investigation session cannot be found."""
 
 
 def start_session(case: CaseManifest) -> InvestigationSession:
@@ -200,3 +216,156 @@ def submit_final_theory(
     )
 
     return updated_session, score
+
+
+class InvestigationUseCases:
+    def __init__(
+        self,
+        *,
+        unit_of_work: UnitOfWork,
+        find_case: CaseFinder,
+    ) -> None:
+        self._unit_of_work = unit_of_work
+        self._find_case = find_case
+
+    async def create_session(
+        self,
+        case_id: str,
+    ) -> SessionRecord:
+        case = self._require_case(case_id)
+
+        record = SessionRecord(
+            id=uuid4(),
+            session=start_session(case),
+        )
+
+        async with self._unit_of_work:
+            await self._unit_of_work.sessions.add(record)
+
+        return record
+
+    async def get_session(
+        self,
+        session_id: UUID,
+    ) -> SessionRecord:
+        async with self._unit_of_work:
+            return await self._require_session(session_id)
+
+    async def get_discovered_evidence(
+        self,
+        session_id: UUID,
+    ) -> tuple[Evidence, ...]:
+        async with self._unit_of_work:
+            record = await self._require_session(session_id)
+            case = self._require_case(
+                record.session.case_id
+            )
+
+            discovered_ids = set(
+                record.session.discovered_evidence_ids
+            )
+
+            return tuple(
+                evidence
+                for evidence in case.initial_evidence
+                if str(evidence.id) in discovered_ids
+            )
+
+    async def question_suspect(
+        self,
+        *,
+        session_id: UUID,
+        suspect_id: str,
+        topic: QuestionTopic | str,
+    ) -> SessionRecord:
+        async with self._unit_of_work:
+            record = await self._require_session(
+                session_id,
+                for_update=True,
+            )
+
+            case = self._require_case(
+                record.session.case_id
+            )
+
+            updated_session = ask_question(
+                case=case,
+                session=record.session,
+                suspect_id=suspect_id,
+                topic=topic,
+            )
+
+            updated_record = SessionRecord(
+                id=record.id,
+                session=updated_session,
+            )
+
+            await self._unit_of_work.sessions.replace(
+                updated_record
+            )
+
+            return updated_record
+
+    async def submit_theory(
+        self,
+        *,
+        session_id: UUID,
+        theory: Theory,
+    ) -> tuple[SessionRecord, TheoryScore]:
+        async with self._unit_of_work:
+            record = await self._require_session(
+                session_id,
+                for_update=True,
+            )
+
+            case = self._require_case(
+                record.session.case_id
+            )
+
+            updated_session, score = submit_final_theory(
+                case=case,
+                session=record.session,
+                theory=theory,
+            )
+
+            updated_record = SessionRecord(
+                id=record.id,
+                session=updated_session,
+            )
+
+            await self._unit_of_work.sessions.replace(
+                updated_record
+            )
+
+            return updated_record, score
+
+    def _require_case(
+        self,
+        case_id: str,
+    ) -> CaseManifest:
+        case = self._find_case(case_id)
+
+        if case is None:
+            raise CaseNotFoundError(
+                f"Case {case_id!r} was not found."
+            )
+
+        return case
+
+    async def _require_session(
+        self,
+        session_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> SessionRecord:
+        record = await self._unit_of_work.sessions.get(
+            session_id,
+            for_update=for_update,
+        )
+
+        if record is None:
+            raise SessionNotFoundError(
+                f"Session {str(session_id)!r} was not found."
+            )
+
+        return record
