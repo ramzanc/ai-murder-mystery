@@ -2,9 +2,10 @@
 
 ## Current checkpoint
 
-Day 12 complete: investigation sessions persist in PostgreSQL through async
-SQLAlchemy, with Alembic-managed schema migrations and explicit database
-configuration.
+Day 14 complete: investigation changes can be represented as immutable,
+append-only PostgreSQL events with monotonic sequence numbers, idempotent
+retries, optimistic concurrency checks, and deterministic replay into an
+investigation-session snapshot.
 
 ## Implemented
 
@@ -181,6 +182,57 @@ configuration.
 - Updated API tests to use explicit FastAPI startup and shutdown lifecycles.
 - Added Day 12 integration coverage for database health and persistence across
   application restarts.
+- Added application-layer `Protocol` ports for:
+  - case lookup
+  - investigation-session repositories
+  - units of work
+- Added an immutable `SessionRecord` that pairs a session UUID with its domain
+  snapshot without exposing persistence rows to application code.
+- Added `InvestigationUseCases` to coordinate session creation, retrieval,
+  evidence retrieval, questioning, and final-theory submission.
+- Moved SQLAlchemy queries and row locking out of FastAPI routes and into a
+  concrete `SqlAlchemySessionRepository` adapter.
+- Added `SqlAlchemyUnitOfWork` so every application use case owns one explicit
+  commit-or-rollback transaction boundary.
+- Added FastAPI dependency wiring that injects the SQLAlchemy unit of work into
+  application use cases at the API composition boundary.
+- Kept HTTP status translation in the API layer through application-level case
+  and session-not-found errors.
+- Added an in-memory fake session repository and rollback-capable fake unit of
+  work for database-free application tests.
+- Added reusable repository contract tests and verified that both the fake and
+  PostgreSQL repositories satisfy the same behavior.
+- Added Day 13 unit coverage for successful commits, failed-operation
+  rollbacks, session updates, finalization, and one transaction boundary per
+  use case.
+- Added integration coverage for the SQL repository with explicit engine
+  disposal to keep async event-loop ownership isolated between tests.
+- Added immutable session-domain events for:
+  - session creation
+  - suspect questions
+  - final-theory submission
+- Added stored event envelopes containing:
+  - session UUID
+  - monotonic stream sequence
+  - idempotency key
+  - discriminated event payload
+- Added deterministic replay from an ordered event stream into an immutable
+  `InvestigationSession`.
+- Added replay validation for empty streams, sequence gaps, mixed session IDs,
+  invalid event order, question sequence gaps, post-finalization questions,
+  and repeated finalization.
+- Added an application-layer event-store port independent of SQLAlchemy.
+- Added a PostgreSQL append-only event repository with no update or delete
+  operations.
+- Added a composite event-stream primary key on session ID and sequence.
+- Added per-session idempotency-key uniqueness and made duplicate keys return
+  the originally stored event.
+- Added expected-version checks for optimistic concurrency.
+- Added an Alembic migration for the `session_events` table.
+- Added Day 14 unit coverage for deterministic replay and invalid streams.
+- Added Day 14 PostgreSQL integration coverage for monotonic sequences,
+  idempotent retries, optimistic concurrency, ordered loading, and snapshot
+  reconstruction.
 
 ## Verification
 
@@ -198,6 +250,12 @@ uv run python -m scripts.validate_case \
   tests/fixtures/cases/broken_timeline.json \
   --format json
 uv run pytest tests/api -v
+uv run pytest tests/unit/test_session_use_cases.py -v
+uv run pytest tests/unit/test_session_repository.py -v
+uv run pytest tests/integration/test_session_repository.py -v
+uv run pytest tests/unit/test_replay.py -v
+uv run pytest tests/integration/test_event_store.py -v
+uv run alembic check
 uv run uvicorn app.main:app --reload
 ```
 
@@ -254,7 +312,28 @@ Expected:
   application and connection pool restart.
 - Session updates execute within transactions and lock the target row until
   the transaction completes.
+- FastAPI session routes contain no SQLAlchemy queries or persistence-row
+  mapping logic.
+- Application session workflows run against the in-memory fake without a
+  database connection.
+- Each use case enters exactly one unit-of-work transaction boundary.
+- Successful fake-unit-of-work operations commit, while failed operations
+  restore the previous repository state and record a rollback.
+- The fake and SQLAlchemy repositories pass the same repository contract.
+- SQL-backed state transitions continue to acquire row-level locks through the
+  repository abstraction.
+- Session event streams receive contiguous, monotonically increasing sequence
+  numbers.
+- Retrying an append with the same idempotency key returns its original event.
+- Appending against a stale expected stream version raises an optimistic
+  concurrency error.
+- Replaying stored session-start, question, and theory events reconstructs the
+  same immutable session snapshot, including evidence and final submission.
+- Invalid event streams are rejected rather than silently reordered or
+  repaired.
 - `uv run alembic upgrade head` creates the schema from an empty database.
+- `uv run alembic current` reports `b7a9c4e21d14 (head)`.
+- `uv run alembic check` reports no new upgrade operations.
 - Swagger UI exposes the complete persisted API flow at `/docs` while the
   server is running.
 
@@ -265,16 +344,24 @@ terminal investigation, or run `uv run uvicorn app.main:app --reload` and open
 `http://127.0.0.1:8000/docs` for the HTTP version. The API supports public case
 browsing, PostgreSQL-backed session creation, evidence retrieval, suspect
 questioning, and final theory scoring without exposing canonical case truth.
-Investigation progress now survives backend process restarts.
+Investigation progress now survives backend process restarts, while the same
+application workflows can run against an in-memory fake for fast unit tests.
+The Day 14 event store can append and reload an investigation history and
+deterministically rebuild the equivalent session snapshot.
 
 ## Current limitation
 
 Persisted sessions do not yet have expiration, archival, or deletion rules.
 Application memory remains bounded because requests load only the requested
 row, but PostgreSQL storage will grow until a later retention policy and cleanup
-job are introduced.
+job are introduced. The append-only event store is implemented and verified,
+but the existing HTTP session mutations still write only the Day 13 JSONB
+snapshot. A later integration must append the event and update the snapshot in
+the same unit-of-work transaction before the event log becomes authoritative
+for live API requests.
 
 ## Next checkpoint
 
-Day 13: introduce repository protocols and explicit transaction boundaries so
-application logic depends on abstractions rather than directly on SQLAlchemy.
+Day 15: add a deliberately simple browser UI for the dossier, suspects,
+evidence, theory submission, and reveal while keeping Python authoritative for
+game state.

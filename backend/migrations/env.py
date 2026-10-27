@@ -4,10 +4,20 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import (
+    async_engine_from_config,
+)
 
 from app.config import get_settings
+from app.infrastructure.persistence.event_repository import (
+    SessionEventRow,
+)
 from app.infrastructure.persistence.models import Base
+
+
+# Importing SessionEventRow registers its table with
+# Base.metadata for Alembic autogeneration.
+del SessionEventRow
 
 
 config = context.config
