@@ -5,6 +5,7 @@ from app.application.ports import (
     SessionRecord,
     UnitOfWork,
 )
+from app.application.reveal import CaseReveal, build_reveal
 from app.application.scoring import TheoryScore, score_theory
 from app.domain.case import CaseManifest
 from app.domain.evidence import Evidence
@@ -269,6 +270,21 @@ class InvestigationUseCases:
                 evidence
                 for evidence in case.initial_evidence
                 if str(evidence.id) in discovered_ids
+            )
+
+    async def get_reveal(
+        self,
+        session_id: UUID,
+    ) -> CaseReveal:
+        async with self._unit_of_work:
+            record = await self._require_session(session_id)
+            case = self._require_case(
+                record.session.case_id
+            )
+
+            return build_reveal(
+                case=case,
+                session=record.session,
             )
 
     async def question_suspect(

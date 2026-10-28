@@ -12,6 +12,7 @@ from app.application.investigation_service import (
     start_session,
 )
 from app.application.ports import SessionRecord
+from app.application.reveal import RevealUnavailableError
 from app.domain.case import CaseManifest
 from app.domain.investigation import QuestionTopic
 from app.domain.theory import Theory
@@ -103,6 +104,28 @@ def test_get_session_from_fake_repository(
         assert loaded == created
         assert unit_of_work.enter_count == 2
         assert unit_of_work.commit_count == 2
+
+    asyncio.run(scenario())
+
+
+def test_get_reveal_is_locked_before_finalization(
+    case,
+) -> None:
+    async def scenario() -> None:
+        use_cases, _, unit_of_work = (
+            build_use_cases(case)
+        )
+
+        created = await use_cases.create_session(
+            str(case.id)
+        )
+
+        with pytest.raises(RevealUnavailableError):
+            await use_cases.get_reveal(created.id)
+
+        assert unit_of_work.enter_count == 2
+        assert unit_of_work.commit_count == 1
+        assert unit_of_work.rollback_count == 1
 
     asyncio.run(scenario())
 
@@ -229,5 +252,18 @@ def test_submit_theory_persists_finalized_session(
 
         assert unit_of_work.enter_count == 2
         assert unit_of_work.commit_count == 2
+
+        reveal = await use_cases.get_reveal(
+            finalized.id
+        )
+
+        assert reveal.killer_id == str(
+            case.solution.killer_id
+        )
+        assert reveal.explanation == (
+            case.solution.explanation
+        )
+        assert unit_of_work.enter_count == 3
+        assert unit_of_work.commit_count == 3
 
     asyncio.run(scenario())

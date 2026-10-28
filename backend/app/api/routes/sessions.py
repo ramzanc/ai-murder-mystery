@@ -12,6 +12,7 @@ from app.api.dependencies import (
 )
 from app.api.schemas import (
     AskQuestionRequest,
+    CaseRevealResponse,
     CreateSessionRequest,
     PublicEvidenceResponse,
     SessionResponse,
@@ -25,6 +26,7 @@ from app.application.investigation_service import (
     InvestigationError,
     SessionNotFoundError,
 )
+from app.application.reveal import RevealUnavailableError
 
 
 router = APIRouter(
@@ -109,6 +111,31 @@ async def get_discovered_evidence(
         PublicEvidenceResponse.from_domain(evidence)
         for evidence in evidence_items
     )
+
+
+@router.get(
+    "/{session_id}/reveal",
+    response_model=CaseRevealResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_reveal(
+    session_id: UUID,
+    use_cases: InvestigationUseCasesDependency,
+) -> CaseRevealResponse:
+    try:
+        reveal = await use_cases.get_reveal(session_id)
+    except (
+        CaseNotFoundError,
+        SessionNotFoundError,
+    ) as exc:
+        _raise_not_found(exc)
+    except RevealUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    return CaseRevealResponse.from_domain(reveal)
 
 
 @router.post(

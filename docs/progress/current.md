@@ -2,10 +2,10 @@
 
 ## Current checkpoint
 
-Day 14 complete: investigation changes can be represented as immutable,
-append-only PostgreSQL events with monotonic sequence numbers, idempotent
-retries, optimistic concurrency checks, and deterministic replay into an
-investigation-session snapshot.
+Day 15 complete: the deterministic investigation is playable in a responsive
+browser UI from dossier review through persisted guest sessions, suspect
+questioning, evidence review, one official accusation, authoritative scoring,
+and the post-finalization canonical reveal.
 
 ## Implemented
 
@@ -233,6 +233,35 @@ investigation-session snapshot.
 - Added Day 14 PostgreSQL integration coverage for monotonic sequences,
   idempotent retries, optimistic concurrency, ordered loading, and snapshot
   reconstruction.
+- Created a Next.js 16 and React 19 frontend in `frontend/`.
+- Added typed API contracts for public cases, sessions, evidence, questions,
+  theory submissions, scores, and canonical reveals.
+- Added a same-origin Next.js rewrite so the browser can call the existing
+  FastAPI service without adding CORS behavior to the backend.
+- Added a restrained, responsive investigation UI with no emoji, icon library,
+  novelty typography, gradients, or decorative AI-style effects.
+- Added browser views for the dossier, victim, discovered evidence, four
+  suspects, interview history, final theory, score, and canonical reveal.
+- Persisted only the opaque session UUID in browser local storage.
+- Reloaded the complete session snapshot and evidence from the backend after a
+  refresh instead of treating browser state as authoritative.
+- Kept question and theory mutations pessimistic: the UI updates only after
+  the backend confirms the new immutable snapshot.
+- Added a read-only `GET /sessions/{session_id}/reveal` endpoint that returns
+  canonical truth only after the official accusation is finalized.
+- Kept reveal construction in the application layer and built it only from the
+  immutable case manifest and persisted session snapshot.
+- Added explicit 404 behavior for unknown sessions and 409 behavior while the
+  canonical reveal is still locked.
+- Added API response DTOs that expose only the canonical killer, motive,
+  method, key evidence, and explanation required by the reveal panel.
+- Added application and API coverage for locked, missing-session, and
+  successful reveal flows.
+- Verified the browser flow against the real PostgreSQL-backed API: start a
+  guest session, question Marcus, refresh and recover his answer, then submit
+  the correct theory and receive 100/100.
+- Updated Next.js to 16.4.3 after an npm advisory check; the final dependency
+  audit reports zero known vulnerabilities.
 
 ## Verification
 
@@ -257,6 +286,15 @@ uv run pytest tests/unit/test_replay.py -v
 uv run pytest tests/integration/test_event_store.py -v
 uv run alembic check
 uv run uvicorn app.main:app --reload
+```
+
+Run from `frontend/`:
+
+```bash
+npm install
+npm run typecheck
+npm run build
+npm run dev
 ```
 
 Expected:
@@ -300,6 +338,8 @@ Expected:
   returns 201 with a UUID session identifier.
 - `GET /sessions/{session_id}` returns the latest immutable session snapshot.
 - `GET /sessions/{session_id}/evidence` returns only public evidence fields.
+- `GET /sessions/{session_id}/reveal` returns 409 before finalization and the
+  immutable canonical reconstruction after finalization.
 - `POST /sessions/{session_id}/questions` appends a deterministic question
   event and stores the resulting copy-on-write session snapshot.
 - `POST /sessions/{session_id}/theory` scores and finalizes the official
@@ -336,18 +376,25 @@ Expected:
 - `uv run alembic check` reports no new upgrade operations.
 - Swagger UI exposes the complete persisted API flow at `/docs` while the
   server is running.
+- `npm run typecheck` completes without TypeScript errors.
+- `npm run build` produces a successful optimized Next.js build.
+- `npm audit` reports zero known dependency vulnerabilities.
+- `http://127.0.0.1:3000` loads the case through the same-origin API proxy.
+- Starting an investigation creates a backend session and stores only its UUID
+  in the browser.
+- A deterministic suspect answer remains visible after a full browser refresh.
+- A complete correct theory receives the backend's authoritative 100/100 score
+  and finalizes the session.
 
 ## Current playable result
 
-Run `uv run python -m scripts.play_case` from `backend/` for the complete
-terminal investigation, or run `uv run uvicorn app.main:app --reload` and open
-`http://127.0.0.1:8000/docs` for the HTTP version. The API supports public case
-browsing, PostgreSQL-backed session creation, evidence retrieval, suspect
-questioning, and final theory scoring without exposing canonical case truth.
-Investigation progress now survives backend process restarts, while the same
-application workflows can run against an in-memory fake for fast unit tests.
-The Day 14 event store can append and reload an investigation history and
-deterministically rebuild the equivalent session snapshot.
+Run `uv run uvicorn app.main:app --reload` from `backend/`, then run
+`npm run dev` from `frontend/` and open `http://127.0.0.1:3000`. The browser can
+start or resume a PostgreSQL-backed guest investigation, inspect the dossier
+and evidence, question each suspect, submit one official theory, and receive
+the authoritative deterministic score and canonical reconstruction.
+Refreshing the browser reloads the server snapshot rather than losing
+progress.
 
 ## Current limitation
 
@@ -362,6 +409,5 @@ for live API requests.
 
 ## Next checkpoint
 
-Day 15: add a deliberately simple browser UI for the dossier, suspects,
-evidence, theory submission, and reveal while keeping Python authoritative for
-game state.
+Day 16: introduce a provider-neutral LLM boundary with structured outputs while
+keeping Python authoritative for truth and legal state changes.

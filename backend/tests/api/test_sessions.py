@@ -112,6 +112,29 @@ def test_get_discovered_evidence_returns_public_fields(
     assert '"unlock_rules"' not in response.text
 
 
+def test_reveal_is_locked_before_final_submission(
+    client: TestClient,
+) -> None:
+    session = create_session(client)
+
+    response = client.get(
+        f"/sessions/{session['id']}/reveal"
+    )
+
+    assert response.status_code == 409
+    assert "reveal is locked" in response.json()["detail"]
+
+
+def test_reveal_for_unknown_session_returns_404(
+    client: TestClient,
+) -> None:
+    response = client.get(
+        f"/sessions/{uuid4()}/reveal"
+    )
+
+    assert response.status_code == 404
+
+
 def test_question_suspect_updates_session(
     client: TestClient,
 ) -> None:
@@ -190,6 +213,35 @@ def test_submit_theory_scores_and_finalizes_session(
     assert '"timeline"' not in response.text
     assert '"solution"' not in response.text
     assert '"explanation"' not in response.text
+
+    reveal_response = client.get(
+        f"/sessions/{session['id']}/reveal"
+    )
+
+    assert reveal_response.status_code == 200
+
+    reveal = reveal_response.json()
+
+    assert set(reveal) == {
+        "killer_id",
+        "killer_name",
+        "motive",
+        "method",
+        "key_evidence",
+        "explanation",
+    }
+    assert reveal["killer_id"] == str(
+        case.solution.killer_id
+    )
+    assert reveal["motive"] == case.solution.motive
+    assert reveal["method"] == case.solution.method
+    assert reveal["explanation"] == (
+        case.solution.explanation
+    )
+    assert {
+        item["id"]
+        for item in reveal["key_evidence"]
+    } == set(case.solution.key_evidence_ids)
 
 
 def test_second_theory_submission_returns_conflict(

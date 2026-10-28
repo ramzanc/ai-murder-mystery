@@ -9,6 +9,7 @@ from pydantic import (
     field_validator,
 )
 
+from app.application.reveal import CaseReveal
 from app.application.scoring import TheoryScore
 from app.domain.case import CaseManifest
 from app.domain.evidence import Evidence
@@ -286,3 +287,39 @@ class TheoryScoreResponse(ApiModel):
 class TheorySubmissionResponse(ApiModel):
     session: SessionResponse
     score: TheoryScoreResponse
+
+
+class RevealEvidenceResponse(ApiModel):
+    id: str
+    title: str
+    description: str
+
+
+class CaseRevealResponse(ApiModel):
+    killer_id: str
+    killer_name: str
+    motive: str
+    method: str
+    key_evidence: tuple[RevealEvidenceResponse, ...]
+    explanation: str
+
+    @classmethod
+    def from_domain(
+        cls,
+        reveal: CaseReveal,
+    ) -> "CaseRevealResponse":
+        return cls(
+            killer_id=reveal.killer_id,
+            killer_name=reveal.killer_name,
+            motive=reveal.motive,
+            method=reveal.method,
+            key_evidence=tuple(
+                RevealEvidenceResponse(
+                    id=evidence.id,
+                    title=evidence.title,
+                    description=evidence.description,
+                )
+                for evidence in reveal.key_evidence
+            ),
+            explanation=reveal.explanation,
+        )
