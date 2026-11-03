@@ -2,11 +2,11 @@
 
 ## Current checkpoint
 
-Day 16 implementation complete: the deterministic investigation remains
-authoritative while structured LLM proposals now sit behind a
-provider-neutral asynchronous Python boundary. OpenAI and local Ollama
-adapters are available, with Ollama configured for `gemma4:12b`, and the
-mocked OpenAI contract passes.
+Day 17 implementation complete: suspect prompts now receive a deterministic,
+allow-list-based context containing only the selected suspect's permitted
+knowledge, own interview history, and explicitly presented evidence. Canonical
+case truth and other suspects' private knowledge remain outside the prompt
+boundary.
 
 ## Implemented
 
@@ -293,6 +293,24 @@ mocked OpenAI contract passes.
   application rules remain independent of OpenAI and Ollama.
 - Kept LLM results advisory: schema validity does not make a proposal factual
   and cannot mutate canonical truth or investigation state.
+- Added immutable Pydantic models for the suspect-specific LLM context.
+- Added an allow-list context builder that selects exactly one suspect's public
+  identity, known facts, observations, beliefs, and interview turns.
+- Kept discovered evidence separate from evidence explicitly presented to a
+  suspect.
+- Rejected unknown suspects, mismatched sessions, unknown evidence, and
+  undiscovered evidence during context construction.
+- Serialized known canonical events only when their IDs appear in the selected
+  suspect's validated knowledge.
+- Preserved canonical case and interview ordering so identical inputs produce
+  byte-identical JSON context.
+- Added deterministic suspect prompt construction with explicit context and
+  detective-question boundaries.
+- Prevented the prompt builder from accepting a complete `CaseManifest`; it
+  accepts only the restricted `SuspectContext`.
+- Added Day 17 unit coverage proving that another suspect's private fact,
+  canonical motive, method, explanation, killer ID, and solution object are
+  absent from Marcus's context and prompt.
 
 ## Verification
 
@@ -316,6 +334,7 @@ uv run pytest tests/integration/test_session_repository.py -v
 uv run pytest tests/unit/test_replay.py -v
 uv run pytest tests/integration/test_event_store.py -v
 uv run pytest tests/unit/test_llm_client_contract.py -q
+uv run pytest tests/unit/test_suspect_context.py -v
 uv run alembic check
 uv run uvicorn app.main:app --reload
 ```
@@ -433,6 +452,9 @@ Expected:
   both OpenAI and Ollama adapters.
 - LLM output remains a non-authoritative proposal and cannot directly change
   game truth, evidence availability, scoring, or session state.
+- Marcus's serialized context and prompt contain neither Maya's private fact
+  nor canonical solution fields.
+- `tests/unit/test_suspect_context.py` passes all 7 Day 17 tests.
 
 ## Current playable result
 
@@ -457,6 +479,5 @@ for live API requests.
 
 ## Next checkpoint
 
-Day 17: build a deterministic, allow-list-based suspect context that exposes
-only the selected suspect's permitted knowledge, conversation history, and
-presented evidence.
+Day 18: classify free-text detective questions into structured semantic
+intents, with confidence, safe fallback behavior, and golden-example tests.
