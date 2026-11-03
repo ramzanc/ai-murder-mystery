@@ -1,0 +1,1 @@
+"""Hosted AI provider adapters."""

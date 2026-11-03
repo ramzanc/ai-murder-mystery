@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import (
     BaseSettings,
@@ -17,6 +18,19 @@ class Settings(BaseSettings):
         "detective:detective@localhost:5432/"
         "daily_detective"
     )
+
+    llm_provider: Literal[
+        "openai",
+        "ollama",
+    ] = "ollama"
+
+    ollama_host: str = (
+        "http://127.0.0.1:11434"
+    )
+
+    ollama_model: str = "gemma4:12b"
+    ollama_timeout_seconds: float = 180.0
+    ollama_num_ctx: int = 8192
 
 
 @lru_cache

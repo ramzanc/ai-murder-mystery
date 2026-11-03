@@ -2,10 +2,11 @@
 
 ## Current checkpoint
 
-Day 15 complete: the deterministic investigation is playable in a responsive
-browser UI from dossier review through persisted guest sessions, suspect
-questioning, evidence review, one official accusation, authoritative scoring,
-and the post-finalization canonical reveal.
+Day 16 implementation complete: the deterministic investigation remains
+authoritative while structured LLM proposals now sit behind a
+provider-neutral asynchronous Python boundary. OpenAI and local Ollama
+adapters are available, with Ollama configured for `gemma4:12b`, and the
+mocked OpenAI contract passes.
 
 ## Implemented
 
@@ -262,6 +263,36 @@ and the post-finalization canonical reveal.
   the correct theory and receive 100/100.
 - Updated Next.js to 16.4.3 after an npm advisory check; the final dependency
   audit reports zero known vulnerabilities.
+- Added a provider-neutral `StructuredLLMClient` application port that accepts
+  a system prompt, user prompt, and Pydantic output type.
+- Added provider-neutral errors for unavailable providers and unusable
+  structured responses.
+- Added an immutable `ClueAssessmentProposal` structured-output schema with a
+  constrained relevance enum.
+- Added an asynchronous OpenAI adapter that:
+  - uses the Responses API structured-output parser
+  - applies explicit timeouts and bounded SDK retries
+  - translates vendor failures into application-level LLM errors
+  - rejects responses without parsed output
+  - closes only SDK clients that it owns
+- Added an asynchronous Ollama adapter that:
+  - implements the same `StructuredLLMClient` contract
+  - sends Pydantic-generated JSON Schema to the local model
+  - validates returned JSON back into the requested Pydantic type
+  - uses deterministic temperature-zero generation
+  - bounds the initial context allocation to 8,192 tokens
+  - translates connection, timeout, server, and schema failures
+- Added environment-based AI configuration for provider selection, Ollama
+  host, `gemma4:12b`, timeout, and context size.
+- Added the OpenAI and Ollama Python clients as infrastructure dependencies.
+- Added deterministic mocked OpenAI contract coverage for successful parsed
+  output, missing output, and invalid adapter configuration.
+- Verified `tests/unit/test_llm_client_contract.py`: 5 tests pass without a
+  network request or API key.
+- Kept all vendor SDK imports inside `app/infrastructure/ai`; domain and
+  application rules remain independent of OpenAI and Ollama.
+- Kept LLM results advisory: schema validity does not make a proposal factual
+  and cannot mutate canonical truth or investigation state.
 
 ## Verification
 
@@ -284,8 +315,17 @@ uv run pytest tests/unit/test_session_repository.py -v
 uv run pytest tests/integration/test_session_repository.py -v
 uv run pytest tests/unit/test_replay.py -v
 uv run pytest tests/integration/test_event_store.py -v
+uv run pytest tests/unit/test_llm_client_contract.py -q
 uv run alembic check
 uv run uvicorn app.main:app --reload
+```
+
+For the local Day 16 model check, start Ollama and verify the configured model:
+
+```bash
+ollama serve
+ollama pull gemma4:12b
+ollama list
 ```
 
 Run from `frontend/`:
@@ -385,6 +425,14 @@ Expected:
 - A deterministic suspect answer remains visible after a full browser refresh.
 - A complete correct theory receives the backend's authoritative 100/100 score
   and finalizes the session.
+- Application and domain code do not import a vendor LLM SDK.
+- A mocked structured-output call returns a validated
+  `ClueAssessmentProposal` deterministically.
+- Missing parsed OpenAI output and invalid adapter configuration are rejected.
+- The same application-level structured-output contract can be implemented by
+  both OpenAI and Ollama adapters.
+- LLM output remains a non-authoritative proposal and cannot directly change
+  game truth, evidence availability, scoring, or session state.
 
 ## Current playable result
 
@@ -409,5 +457,6 @@ for live API requests.
 
 ## Next checkpoint
 
-Day 16: introduce a provider-neutral LLM boundary with structured outputs while
-keeping Python authoritative for truth and legal state changes.
+Day 17: build a deterministic, allow-list-based suspect context that exposes
+only the selected suspect's permitted knowledge, conversation history, and
+presented evidence.
