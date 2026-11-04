@@ -2,10 +2,11 @@
 
 ## Current checkpoint
 
-Day 18 implementation complete: free-text detective questions can now be
-classified into validated semantic intents with extracted suspect, time, and
-evidence mentions. Low-confidence, unknown, blank, and provider-failure cases
-fall back safely without allowing LLM output to change game state.
+Day 19 implementation complete: Python now computes a deterministic legal
+strategy space for each suspect, and the LLM may select only a structured
+tactic and permitted facts from that space. Innocent and killer strategy
+spaces differ, while illegal strategies, invented facts, and forbidden
+disclosures are rejected before dialogue generation.
 
 ## Implemented
 
@@ -359,6 +360,8 @@ uv run pytest tests/integration/test_event_store.py -v
 uv run pytest tests/unit/test_llm_client_contract.py -q
 uv run pytest tests/unit/test_suspect_context.py -v
 uv run pytest tests/ai/test_intent_eval.py -v
+uv run pytest tests/unit/test_legal_strategies.py -v
+uv run pytest tests/ai/test_strategy_schema.py -v
 uv run alembic check
 uv run uvicorn app.main:app --reload
 ```
@@ -488,6 +491,30 @@ Expected:
 - `tests/ai/test_intent_eval.py` passes all 7 Day 18 tests.
 - The Day 18 evaluation and shared structured-LLM contract suites pass all 12
   tests together.
+- Added immutable Day 19 strategy-domain models for permitted facts, legal
+  tactics, complete strategy spaces, LLM proposals, and validated plans.
+- Added deny, evade, disclose, redirect, and refuse tactic types.
+- Added deterministic legal-strategy construction from the Day 17 safe suspect
+  context and the Day 18 semantic intent.
+- Restricted unknown intents to the safe refusal strategy.
+- Gave innocent suspects disclose, redirect, and refuse strategies.
+- Gave the canonical killer deny, evade, redirect, and refuse strategies while
+  withholding the disclose strategy.
+- Kept canonical solution fields out of the strategy space supplied to the
+  planner, while deterministic Python uses the killer ID only to select the
+  appropriate legal action space.
+- Added a constrained planner that sends only legal strategies, safe facts,
+  and the detective question to the structured LLM boundary.
+- Added post-generation validation that rejects strategies outside the legal
+  space and fact IDs not permitted by the chosen strategy.
+- Added a deterministic refusal fallback for blank questions and LLM provider
+  failures.
+- Added schema validation for extra proposal fields and duplicate fact IDs.
+- Added Day 19 coverage for role-specific action spaces, deterministic
+  construction, hidden-truth exclusion, forbidden disclosure, invented facts,
+  and successful legal selection.
+- `tests/unit/test_legal_strategies.py` and
+  `tests/ai/test_strategy_schema.py` pass all 10 Day 19 tests.
 
 ## Current playable result
 
@@ -510,9 +537,11 @@ snapshot. A later integration must append the event and update the snapshot in
 the same unit-of-work transaction before the event log becomes authoritative
 for live API requests. Semantic intent classification is not yet connected to
 the HTTP questioning flow; the existing API still accepts the deterministic
-Day 4 question topics directly.
+Day 4 question topics directly. The Day 19 planner produces a validated tactic
+and selected safe facts, but it is not yet connected to natural dialogue
+generation or the browser interrogation flow.
 
 ## Next checkpoint
 
-Day 19: let Python compute the legal suspect strategy space, then allow the LLM
-to choose a validated tactic from only those permitted actions.
+Day 20: render each validated suspect plan into characterful natural dialogue,
+then connect the first live AI suspect to the browser interrogation panel.
