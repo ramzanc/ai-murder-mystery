@@ -1,0 +1,8 @@
+{"id":"alibi_time_casual","message":"Where were you around ten?","expected_intent":"ask_alibi","suspect_mentions":[],"time_references":["around ten"],"evidence_mentions":[]}
+{"id":"alibi_time_direct","message":"What's your alibi for 10pm?","expected_intent":"ask_alibi","suspect_mentions":[],"time_references":["10pm"],"evidence_mentions":[]}
+{"id":"alibi_witness","message":"Can anyone confirm where you were?","expected_intent":"ask_alibi","suspect_mentions":[],"time_references":[],"evidence_mentions":[]}
+{"id":"secret_direct","message":"What are you hiding from me?","expected_intent":"probe_secret","suspect_mentions":[],"time_references":[],"evidence_mentions":[]}
+{"id":"timeline_person_time","message":"Did Marcus enter the study before 9:30 PM?","expected_intent":"ask_timeline","suspect_mentions":["Marcus"],"time_references":["before 9:30 PM"],"evidence_mentions":[]}
+{"id":"evidence_watch","message":"How do you explain the cracked watch?","expected_intent":"discuss_evidence","suspect_mentions":[],"time_references":[],"evidence_mentions":["cracked watch"]}
+{"id":"evidence_person","message":"Did Iris write the torn note?","expected_intent":"discuss_evidence","suspect_mentions":["Iris"],"time_references":[],"evidence_mentions":["torn note"]}
+{"id":"unknown_small_talk","message":"Do you like jazz?","expected_intent":"unknown","suspect_mentions":[],"time_references":[],"evidence_mentions":[]}

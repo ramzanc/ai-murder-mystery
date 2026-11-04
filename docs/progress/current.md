@@ -2,11 +2,10 @@
 
 ## Current checkpoint
 
-Day 17 implementation complete: suspect prompts now receive a deterministic,
-allow-list-based context containing only the selected suspect's permitted
-knowledge, own interview history, and explicitly presented evidence. Canonical
-case truth and other suspects' private knowledge remain outside the prompt
-boundary.
+Day 18 implementation complete: free-text detective questions can now be
+classified into validated semantic intents with extracted suspect, time, and
+evidence mentions. Low-confidence, unknown, blank, and provider-failure cases
+fall back safely without allowing LLM output to change game state.
 
 ## Implemented
 
@@ -311,6 +310,30 @@ boundary.
 - Added Day 17 unit coverage proving that another suspect's private fact,
   canonical motive, method, explanation, killer ID, and solution object are
   absent from Marcus's context and prompt.
+- Added immutable semantic-intent models for:
+  - alibi questions
+  - secret probing
+  - timeline questions
+  - evidence discussion
+  - unknown or ambiguous messages
+- Separated non-authoritative `IntentProposal` output from the application-
+  approved `ClassifiedIntent` result.
+- Added structured entity extraction for explicitly mentioned suspects, times,
+  and evidence.
+- Added an asynchronous, provider-neutral intent-classification service using
+  the existing `StructuredLLMClient` port and Pydantic output validation.
+- Added an application-owned confidence threshold so low-confidence proposals
+  become `unknown` rather than triggering game behavior.
+- Added safe fallback behavior for blank input, explicit unknown intent, low
+  confidence, and application-level LLM provider failures.
+- Discarded uncertain extracted entities whenever fallback is used.
+- Added JSONL golden examples covering paraphrases, entity extraction, and
+  unrelated messages.
+- Added Day 18 evaluation coverage for equivalent alibi paraphrases, safe
+  fallback behavior, provider failure, blank input, and invalid confidence
+  thresholds.
+- Made the Day 18 fake LLM clients satisfy the generic structured-output
+  protocol and added runtime validation for golden-case string collections.
 
 ## Verification
 
@@ -335,6 +358,7 @@ uv run pytest tests/unit/test_replay.py -v
 uv run pytest tests/integration/test_event_store.py -v
 uv run pytest tests/unit/test_llm_client_contract.py -q
 uv run pytest tests/unit/test_suspect_context.py -v
+uv run pytest tests/ai/test_intent_eval.py -v
 uv run alembic check
 uv run uvicorn app.main:app --reload
 ```
@@ -455,6 +479,15 @@ Expected:
 - Marcus's serialized context and prompt contain neither Maya's private fact
   nor canonical solution fields.
 - `tests/unit/test_suspect_context.py` passes all 7 Day 17 tests.
+- Alibi paraphrases such as “Where were you around ten?” and “What's your
+  alibi for 10pm?” produce the same structured semantic intent.
+- Explicit suspect, time, and evidence mentions are preserved in validated
+  intent entities when classification is accepted.
+- Unknown, blank, low-confidence, and provider-failure classifications fall
+  back to `unknown` without retaining uncertain entities.
+- `tests/ai/test_intent_eval.py` passes all 7 Day 18 tests.
+- The Day 18 evaluation and shared structured-LLM contract suites pass all 12
+  tests together.
 
 ## Current playable result
 
@@ -475,9 +508,11 @@ job are introduced. The append-only event store is implemented and verified,
 but the existing HTTP session mutations still write only the Day 13 JSONB
 snapshot. A later integration must append the event and update the snapshot in
 the same unit-of-work transaction before the event log becomes authoritative
-for live API requests.
+for live API requests. Semantic intent classification is not yet connected to
+the HTTP questioning flow; the existing API still accepts the deterministic
+Day 4 question topics directly.
 
 ## Next checkpoint
 
-Day 18: classify free-text detective questions into structured semantic
-intents, with confidence, safe fallback behavior, and golden-example tests.
+Day 19: let Python compute the legal suspect strategy space, then allow the LLM
+to choose a validated tactic from only those permitted actions.
