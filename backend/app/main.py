@@ -4,6 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 
 from app.api.routes.cases import router as cases_router
+from app.api.routes.interrogation import (
+    router as interrogation_router,
+)
 from app.api.routes.sessions import router as sessions_router
 from app.infrastructure.database import (
     database_is_available,
@@ -27,6 +30,7 @@ app = FastAPI(
 
 app.include_router(cases_router)
 app.include_router(sessions_router)
+app.include_router(interrogation_router)
 
 
 @app.get("/health")

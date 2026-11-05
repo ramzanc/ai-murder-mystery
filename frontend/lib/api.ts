@@ -1,6 +1,7 @@
 import type {
   CaseReveal,
   InvestigationSession,
+  InterrogationResponse,
   PublicCase,
   PublicEvidence,
   QuestionTopic,
@@ -99,6 +100,25 @@ export function askQuestion(
     {
       method: "POST",
       body: JSON.stringify({ suspect_id: suspectId, topic }),
+    },
+  );
+}
+
+export function interrogateSuspect(
+  sessionId: string,
+  suspectId: string,
+  question: string,
+  presentedEvidenceIds: string[],
+): Promise<InterrogationResponse> {
+  return request<InterrogationResponse>(
+    `/sessions/${encodeURIComponent(sessionId)}/interrogations`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        suspect_id: suspectId,
+        question,
+        presented_evidence_ids: presentedEvidenceIds,
+      }),
     },
   );
 }

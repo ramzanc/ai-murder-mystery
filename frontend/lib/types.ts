@@ -55,6 +55,37 @@ export interface QuestionEvent {
   answer: string;
 }
 
+export interface InterrogationLatency {
+  intent_ms: number;
+  planning_ms: number;
+  dialogue_ms: number;
+  total_ms: number;
+}
+
+export interface InterrogationTrace {
+  intent: string;
+  strategy_id: string;
+  tactic: string;
+  selected_fact_ids: string[];
+  provider: string;
+  model: string;
+  intent_prompt_version: string;
+  strategy_prompt_version: string;
+  dialogue_prompt_version: string;
+  intent_used_fallback: boolean;
+  strategy_used_fallback: boolean;
+  dialogue_used_fallback: boolean;
+  latency: InterrogationLatency;
+}
+
+export interface InterrogationResponse {
+  session_id: string;
+  suspect_id: string;
+  question: string;
+  dialogue: string;
+  trace: InterrogationTrace;
+}
+
 export interface InvestigationSession {
   id: string;
   case_id: string;

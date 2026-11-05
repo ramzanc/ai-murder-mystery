@@ -323,3 +323,81 @@ class CaseRevealResponse(ApiModel):
             ),
             explanation=reveal.explanation,
         )
+
+class InterrogationRequest(ApiModel):
+    suspect_id: str = Field(
+        pattern=r"^suspect_[a-z0-9_]+$",
+    )
+    question: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    presented_evidence_ids: tuple[str, ...] = ()
+
+    @field_validator("question")
+    @classmethod
+    def strip_question(
+        cls,
+        value: str,
+    ) -> str:
+        normalized = value.strip()
+
+        if not normalized:
+            raise ValueError(
+                "question must not be blank"
+            )
+
+        return normalized
+
+    @field_validator("presented_evidence_ids")
+    @classmethod
+    def validate_presented_evidence_ids(
+        cls,
+        evidence_ids: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        if len(evidence_ids) != len(set(evidence_ids)):
+            raise ValueError(
+                "presented evidence IDs must be unique"
+            )
+
+        for evidence_id in evidence_ids:
+            if re.fullmatch(
+                r"evidence_[a-z0-9_]+",
+                evidence_id,
+            ) is None:
+                raise ValueError(
+                    f"invalid evidence ID: {evidence_id}"
+                )
+
+        return evidence_ids
+
+
+class InterrogationLatencyResponse(ApiModel):
+    intent_ms: float
+    planning_ms: float
+    dialogue_ms: float
+    total_ms: float
+
+
+class InterrogationTraceResponse(ApiModel):
+    intent: str
+    strategy_id: str
+    tactic: str
+    selected_fact_ids: tuple[str, ...]
+    provider: str
+    model: str
+    intent_prompt_version: str
+    strategy_prompt_version: str
+    dialogue_prompt_version: str
+    intent_used_fallback: bool
+    strategy_used_fallback: bool
+    dialogue_used_fallback: bool
+    latency: InterrogationLatencyResponse
+
+
+class InterrogationResponse(ApiModel):
+    session_id: UUID
+    suspect_id: str
+    question: str
+    dialogue: str
+    trace: InterrogationTraceResponse

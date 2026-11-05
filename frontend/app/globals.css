@@ -31,7 +31,8 @@ body {
 
 button,
 select,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -43,6 +44,11 @@ select {
 button:focus-visible,
 select:focus-visible,
 input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus) 35%, transparent);
+  outline-offset: 2px;
+}
+
+textarea:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--focus) 35%, transparent);
   outline-offset: 2px;
 }
@@ -427,6 +433,175 @@ dd {
   color: #4b534d;
 }
 
+.ai-interrogation {
+  margin-top: 1.5rem;
+  border: 1px solid var(--line-strong);
+  border-top: 4px solid var(--accent);
+  border-radius: 5px;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: var(--surface);
+}
+
+.ai-interrogation-heading,
+.question-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.live-badge {
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.ai-interrogation-intro {
+  max-width: 70ch;
+  color: var(--muted);
+}
+
+.ai-transcript {
+  display: grid;
+  gap: 1rem;
+  max-height: 560px;
+  overflow-y: auto;
+  border-block: 1px solid var(--line);
+  padding: 1rem 0;
+}
+
+.ai-exchange {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.detective-message,
+.suspect-message {
+  display: grid;
+  gap: 0.2rem;
+  max-width: 86%;
+  margin: 0;
+  border-radius: 4px;
+  padding: 0.75rem 0.85rem;
+}
+
+.detective-message {
+  justify-self: end;
+  border: 1px solid var(--line);
+  background: #ede9e1;
+}
+
+.suspect-message {
+  justify-self: start;
+  border-left: 3px solid var(--accent);
+  background: #f6eeee;
+}
+
+.detective-message span,
+.suspect-message span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.interaction-trace {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.interaction-trace summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.interaction-trace dl {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 0.65rem 0 0;
+}
+
+.interaction-trace dd {
+  overflow-wrap: anywhere;
+}
+
+.thinking-state {
+  margin: 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.ai-question-form {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 1rem;
+}
+
+.chat-evidence-picker {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.chat-evidence-picker legend,
+.question-field > span {
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.chat-evidence-picker legend span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.chat-evidence-picker > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chat-evidence-picker label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.76rem;
+}
+
+.chat-evidence-picker input {
+  accent-color: var(--accent);
+}
+
+.question-field {
+  display: grid;
+}
+
+.question-field textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 0.7rem;
+  color: var(--ink);
+  background: #fff;
+}
+
+.question-submit-row small {
+  color: var(--muted);
+}
+
 .theory-panel {
   margin-top: 2.5rem;
   border-top: 4px solid var(--ink);
@@ -608,6 +783,10 @@ select {
   .score-breakdown {
     grid-template-columns: 1fr 1fr;
   }
+
+  .interaction-trace dl {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 600px) {
@@ -642,6 +821,20 @@ select {
   }
 
   .question-actions .button {
+    width: 100%;
+  }
+
+  .ai-interrogation-heading,
+  .question-submit-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .live-badge {
+    align-self: start;
+  }
+
+  .question-submit-row .button {
     width: 100%;
   }
 }

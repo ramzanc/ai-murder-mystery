@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { CaseDossier } from "@/components/CaseDossier";
+import { InterrogationChat } from "@/components/InterrogationChat";
 import { SuspectPanel } from "@/components/SuspectPanel";
 import { TheoryPanel } from "@/components/TheoryPanel";
 import {
@@ -13,11 +14,13 @@ import {
   getEvidence,
   getReveal,
   getSession,
+  interrogateSuspect,
   submitTheory,
 } from "@/lib/api";
 import type {
   CaseReveal,
   InvestigationSession,
+  InterrogationResponse,
   PublicCase,
   PublicEvidence,
   QuestionTopic,
@@ -27,6 +30,7 @@ import type {
 
 const CASE_ID = "case_ashcroft_study";
 const SESSION_STORAGE_KEY = `daily-detective:${CASE_ID}:session`;
+const LIVE_SUSPECT_ID = "suspect_marcus_reed";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -47,6 +51,7 @@ export default function HomePage() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [aiTurns, setAiTurns] = useState<InterrogationResponse[]>([]);
 
   const loadReveal = useCallback(async (sessionId: string) => {
     try {
@@ -125,8 +130,36 @@ export default function HomePage() {
       setScore(null);
       setReveal(null);
       setRevealUnavailable(false);
+      setAiTurns([]);
     } catch (startError) {
       setError(getErrorMessage(startError));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleInterrogation(
+    suspectId: string,
+    question: string,
+    presentedEvidenceIds: string[],
+  ): Promise<boolean> {
+    if (!session) return false;
+
+    setPendingAction(`interrogate:${suspectId}`);
+    setError(null);
+
+    try {
+      const turn = await interrogateSuspect(
+        session.id,
+        suspectId,
+        question,
+        presentedEvidenceIds,
+      );
+      setAiTurns((current) => [...current, turn]);
+      return true;
+    } catch (interrogationError) {
+      setError(getErrorMessage(interrogationError));
+      return false;
     } finally {
       setPendingAction(null);
     }
@@ -214,6 +247,10 @@ export default function HomePage() {
     );
   }
 
+  const liveSuspect = caseData.suspects.find(
+    (suspect) => suspect.id === LIVE_SUSPECT_ID,
+  );
+
   return (
     <main>
       <header className="masthead">
@@ -242,7 +279,7 @@ export default function HomePage() {
             <div className="section-heading suspects-heading">
               <p className="eyebrow">Interviews</p>
               <h2 id="suspects-title">Suspects</h2>
-              <p>Ask each suspect about the two supported topics. Answers are recorded in the official session.</p>
+              <p>Use the recorded prompts for every suspect, or conduct the first live free-text interview with Marcus Reed.</p>
             </div>
 
             <div className="suspect-list">
@@ -265,6 +302,17 @@ export default function HomePage() {
                 );
               })}
             </div>
+
+            {liveSuspect && (
+              <InterrogationChat
+                disabled={Boolean(pendingAction) || session.is_finalized}
+                evidence={evidence}
+                onAsk={handleInterrogation}
+                pending={pendingAction === `interrogate:${LIVE_SUSPECT_ID}`}
+                suspect={liveSuspect}
+                turns={aiTurns}
+              />
+            )}
           </section>
 
           <TheoryPanel

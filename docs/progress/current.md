@@ -2,11 +2,11 @@
 
 ## Current checkpoint
 
-Day 19 implementation complete: Python now computes a deterministic legal
-strategy space for each suspect, and the LLM may select only a structured
-tactic and permitted facts from that space. Innocent and killer strategy
-spaces differ, while illegal strategies, invented facts, and forbidden
-disclosures are rejected before dialogue generation.
+Day 20 implementation complete: a player can ask Marcus Reed a free-text
+question in the browser and receive characterful dialogue rendered from a
+Python-validated strategy. The intent → legal strategy → structured plan →
+dialogue pipeline is exposed through a read-only API with prompt, model,
+fallback, and per-stage latency metadata.
 
 ## Implemented
 
@@ -362,6 +362,7 @@ uv run pytest tests/unit/test_suspect_context.py -v
 uv run pytest tests/ai/test_intent_eval.py -v
 uv run pytest tests/unit/test_legal_strategies.py -v
 uv run pytest tests/ai/test_strategy_schema.py -v
+uv run pytest tests/integration/test_ai_interrogation.py -v
 uv run alembic check
 uv run uvicorn app.main:app --reload
 ```
@@ -515,6 +516,27 @@ Expected:
   and successful legal selection.
 - `tests/unit/test_legal_strategies.py` and
   `tests/ai/test_strategy_schema.py` pass all 10 Day 19 tests.
+- Added the Day 20 natural-dialogue renderer for validated suspect plans.
+- Separated constrained strategy selection from persona-conditioned dialogue
+  generation and versioned the dialogue prompt explicitly.
+- Restricted the renderer to the validated tactic and selected permitted
+  facts, with deterministic tactic-specific fallbacks for provider failures.
+- Added an interrogation orchestrator connecting semantic intent, safe suspect
+  context, legal strategy construction, structured planning, and dialogue.
+- Added an immutable interaction trace with intent, strategy, tactic, selected
+  fact IDs, provider, model, prompt versions, fallback flags, and per-stage
+  latency metadata.
+- Added `POST /sessions/{session_id}/interrogations` for free-text questions.
+- Kept natural interrogation read-only so generated dialogue cannot modify
+  canonical truth, evidence availability, scoring, or persisted session state.
+- Added a browser interrogation panel for Marcus Reed with free-text input,
+  optional discovered-evidence presentation, pending and error states,
+  conversational turns, and an expandable response trace.
+- Kept AI chat turns in page state because the Day 20 backend intentionally
+  does not persist natural-language interaction events yet.
+- Verified the focused Day 18–20 backend suites with 18 passing tests.
+- Verified the frontend with `npm run typecheck`, `npm run build`, and a local
+  responsive browser inspection.
 
 ## Current playable result
 
@@ -522,7 +544,9 @@ Run `uv run uvicorn app.main:app --reload` from `backend/`, then run
 `npm run dev` from `frontend/` and open `http://127.0.0.1:3000`. The browser can
 start or resume a PostgreSQL-backed guest investigation, inspect the dossier
 and evidence, question each suspect, submit one official theory, and receive
-the authoritative deterministic score and canonical reconstruction.
+the authoritative deterministic score and canonical reconstruction. The
+player can also ask Marcus Reed free-text questions, optionally present a
+discovered clue, inspect the generated reply, and expand its AI trace.
 Refreshing the browser reloads the server snapshot rather than losing
 progress.
 
@@ -535,13 +559,13 @@ job are introduced. The append-only event store is implemented and verified,
 but the existing HTTP session mutations still write only the Day 13 JSONB
 snapshot. A later integration must append the event and update the snapshot in
 the same unit-of-work transaction before the event log becomes authoritative
-for live API requests. Semantic intent classification is not yet connected to
-the HTTP questioning flow; the existing API still accepts the deterministic
-Day 4 question topics directly. The Day 19 planner produces a validated tactic
-and selected safe facts, but it is not yet connected to natural dialogue
-generation or the browser interrogation flow.
+for live API requests. The deterministic Day 4 question endpoint remains
+available alongside natural interrogation. Day 20 AI turns are read-only and
+page-local: they are not added to the session snapshot or event stream, so they
+disappear on refresh. Only Marcus Reed is connected to live browser chat at
+this checkpoint; the other suspects retain deterministic interview controls.
 
 ## Next checkpoint
 
-Day 20: render each validated suspect plan into characterful natural dialogue,
-then connect the first live AI suspect to the browser interrogation panel.
+Day 21: add strategy validation recovery, bounded retries, a safe fallback
+path, and an explicit AI error taxonomy.

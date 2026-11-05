@@ -85,8 +85,11 @@ class OllamaStructuredLLMClient:
                 ],
                 format=output_type.model_json_schema(),
                 options={
-                    "temperature": 0,
+                    "temperature": 0.2,
                     "num_ctx": self._num_ctx,
+                    "num_predict": 300,
+                    "repeat_penalty": 1.15,
+                    "repeat_last_n": 128,
                 },
                 think=False,
                 keep_alive="10m",
